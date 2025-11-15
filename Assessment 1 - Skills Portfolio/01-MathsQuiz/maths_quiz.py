@@ -2,430 +2,342 @@ import tkinter as tk
 from tkinter import ttk
 import random
 import os
-
-#Main Window Setup
-galaxy = tk.Tk()
-galaxy.title("Mind Matrix: Space Arithmetic Quest")
-galaxy.geometry("600x600")
-galaxy.config(bg="#0B0C10")
+import pygame
 
 
-#Global State Values
-mission_mode = ""
-current_question = 0
-current_score = 0
-total_questions = 10
-mission_progress = None
-pilot_answer = None
-feedback_label = None
+class MathNebula:
+
+    # Initialization
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Mind Matrix: Space Arithmetic Quest")
+        self.root.geometry("600x600")
+        self.root.config(bg="#0B0C10")
+
+        self.root.protocol("WM_DELETE_WINDOW", self.quit_game)
+
+        # Game state
+        self.mission_mode = ""
+        self.current_question = 0
+        self.current_score = 0
+        self.total_questions = 10
+        self.num_a = 0
+        self.num_b = 0
+        self.operator_symbol = ""
+        self.attempt_count = 0
+
+        # Widgets that change during play
+        self.mission_progress = None
+        self.pilot_entry = None
+        self.feedback_label = None
+
+        # Asset root folders
+        self.script_dir = os.path.dirname(__file__)
+        self.bg_dir = os.path.join(self.script_dir, "backgrounds")
+        self.btn_dir = os.path.join(self.script_dir, "buttons")
+        self.snd_dir = os.path.join(self.script_dir, "sounds")
+
+        # Initialize pygame mixer
+        pygame.mixer.init()
+
+        # Load background music
+        bg_music_path = os.path.join(self.snd_dir, "space_ambience.mp3")
+        pygame.mixer.music.load(bg_music_path)
+        pygame.mixer.music.play(-1)  # loop forever
+        pygame.mixer.music.set_volume(0.3)
+
+        # Load sounds
+        self.click_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "click.mp3"))
+        self.correct_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "correct.mp3"))
+        self.wrong_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "wrong.mp3"))
+        self.start_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "start.wav"))
+        self.exit_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "exit.wav"))
 
 
-#Quick Label Helper
-def create_label(parent, text, font=("Consolas", 12), fg="#C5C6C7", pady=0, anchor=None):
-    label = tk.Label(parent, text=text, font=font, fg=fg, bg="#0B0C10")
-    label.pack(pady=pady, anchor=anchor)
-    return label
+    # Utility Helpers
+    def clear_screen(self):
+        for w in self.root.winfo_children():
+            w.destroy()
 
-#Quick Button Helper
-def create_button(parent, text, command, pady=0):
-    button = ttk.Button(parent, text=text, command=command)
-    button.pack(pady=pady)
-    return button
+    def animate_progress(self, target):
+        current = self.mission_progress["value"]
+        if current < target:
+            self.mission_progress["value"] += 1
+            self.root.after(10, lambda: self.animate_progress(target))
 
-#Remove all widgets on screen
-def clear_galaxy():
-    for w in galaxy.winfo_children():
-        w.destroy()
+    def load_image(self, folder, name, sub=None):
+        path = os.path.join(folder, name)
+        img = tk.PhotoImage(file=path)
+        if sub:
+            img = img.subsample(*sub)
+        return img
 
+    # Home Screen
+    def launch_portal(self):
+        self.clear_screen()
 
-#Progress Bar Animation
-def animate_progress(target):
-    current = mission_progress["value"]
-    if current < target:
-        mission_progress["value"] += 1
-        galaxy.after(10, lambda: animate_progress(target))
+        bg = self.load_image(self.bg_dir, "bg_launch.png")
+        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_launch_ref = bg
 
+        start_img = self.load_image(self.btn_dir, "start_btn.png", (4, 4))
+        exit_img = self.load_image(self.btn_dir, "exit_btn.png", (4, 4))
 
-# Home (Launch Portal)
-def launch_portal():
-    clear_galaxy()
+        start_btn = tk.Button(
+            self.root, image=start_img, command=lambda: [self.start_sound.play(), self.mission_instructions()],
+            borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
+        )
+        start_btn.image = start_img
+        start_btn.place(relx=0.15, rely=0.9, anchor="sw")
 
-    script_dir = os.path.dirname(__file__)
-    bg_path = os.path.join(script_dir, "backgrounds", "bg_launch.png")
-    bg_image = tk.PhotoImage(file=bg_path)
+        exit_btn = tk.Button(
+            self.root, image=exit_img, command=lambda: [self.start_sound.play(), self.root.after(200, self.quit_game)],
+            borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
+        )
+        exit_btn.image = exit_img
+        exit_btn.place(relx=0.85, rely=0.9, anchor="se")
 
-    bg_label = tk.Label(galaxy, image=bg_image)
-    bg_label.image = bg_image
-    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+    # Mission Instructions
+    def mission_instructions(self):
+        self.clear_screen()
 
-    # Load start/exit button images
-    start_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "start_btn.png")).subsample(4,4)
-    exit_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "exit_btn.png")).subsample(4,4)
+        bg = self.load_image(self.bg_dir, "mission_briefing.png")
+        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_brief_ref = bg
 
-    # Start Mission Button
-    start_button = tk.Button(
-        galaxy,
-        image=start_img,
-        command=mission_instructions,
-        borderwidth=0,
-        highlightthickness=0,
-        bg="#0B0C10",
-        activebackground="#0B0C10",
-    )
-    start_button.image = start_img
-    start_button.place(relx=0.15, rely=0.9, anchor="sw")
+        explore_img = self.load_image(self.btn_dir, "explore_btn.png", (4, 3))
+        back_img = self.load_image(self.btn_dir, "back_btn.png", (4, 4))
 
-    # Exit Button
-    exit_button = tk.Button(
-        galaxy,
-        image=exit_img,
-        command=galaxy.destroy,
-        borderwidth=0,
-        highlightthickness=0,
-        bg="#0B0C10",
-        activebackground="#0B0C10",
-    )
-    exit_button.image = exit_img
-    exit_button.place(relx=0.85, rely=0.9, anchor="se")
+        explore_btn = tk.Button(
+            self.root, image=explore_img, command=lambda: [self.click_sound.play(), self.select_difficulty()],
+            borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
+        )
+        explore_btn.image = explore_img
+        explore_btn.place(relx=0.72, rely=0.74, anchor="center")
 
+        back_btn = tk.Button(
+            self.root, image=back_img, command=lambda: [self.click_sound.play(), self.launch_portal()],
+            borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
+        )
+        back_btn.image = back_img
+        back_btn.place(relx=0.29, rely=0.75, anchor="center")
 
-# Mission Instructions
-def mission_instructions():
-    clear_galaxy()
+    # Difficulty Select
+    def select_difficulty(self):
+        self.clear_screen()
 
-    script_dir = os.path.dirname(__file__)
-    bg_path = os.path.join(script_dir, "backgrounds", "mission_briefing.png")
-    bg_image = tk.PhotoImage(file=bg_path)
+        bg = self.load_image(self.bg_dir, "flight_bg.png")
+        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_flight_ref = bg
 
-    bg_label = tk.Label(galaxy, image=bg_image)
-    bg_label.image = bg_image
-    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        advance = self.load_image(self.btn_dir, "planet_advance.png", (2, 2))
+        moderate = self.load_image(self.btn_dir, "planet_moderate.png", (2, 2))
+        easy = self.load_image(self.btn_dir, "planet_easy.png", (2, 2))
 
-    # Load buttons
-    explore_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "explore_btn.png")).subsample(4,3)
-    back_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "back_btn.png")).subsample(4,4)
+        # Perfectly aligned buttons
+        btnA = tk.Button(self.root, image=advance, command=lambda: [self.click_sound.play(), self.start_mission("Advanced")],
+                         bd=0, highlightthickness=0, activebackground="#000000", bg="#000000")
+        btnA.image = advance
+        btnA.place(x=55, y=115)
 
-    # Continue Button
-    explore_btn = tk.Button(
-        galaxy,
-        image=explore_img,
-        bg="#0B0C10",
-        activebackground="#0B0C10",
-        borderwidth=0,
-        highlightthickness=0,
-        command=select_difficulty
-    )
-    explore_btn.image = explore_img
-    explore_btn.place(relx=0.72, rely=0.74, anchor="center")
+        btnM = tk.Button(self.root, image=moderate, command=lambda: [self.click_sound.play(), self.start_mission("Moderate")],
+                         bd=0, highlightthickness=0, activebackground="#000000", bg="#000000")
+        btnM.image = moderate
+        btnM.place(x=130, y=375)
 
-    # Back Button
-    back_btn = tk.Button(
-        galaxy,
-        image=back_img,
-        bg="#0B0C10",
-        activebackground="#0B0C10",
-        borderwidth=0,
-        highlightthickness=0,
-        command=launch_portal
-    )
-    back_btn.image = back_img
-    back_btn.place(relx=0.29, rely=0.75, anchor="center")
+        btnE = tk.Button(self.root, image=easy, command=lambda: [self.click_sound.play(), self.start_mission("Easy")],
+                         bd=0, highlightthickness=0, activebackground="#000000", bg="#000000")
+        btnE.image = easy
+        btnE.place(x=355, y=485)
 
+        back_img = self.load_image(self.btn_dir, "back_btn.png", (4, 4))
+        back_btn = tk.Button(
+            self.root, image=back_img, command=lambda: [self.start_sound.play(), self.mission_instructions()],
+            borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
+        )
+        back_btn.image = back_img
+        back_btn.place(relx=0.97, rely=0.98, anchor="se")
 
-# Difficulty Selection
-def select_difficulty():
-    clear_galaxy()
+    # Mission Start
+    def start_mission(self, mode):
+        self.mission_mode = mode
+        self.current_question = 0
+        self.current_score = 0
+        self.next_question()
 
-    script_dir = os.path.dirname(__file__)
-    bg_path = os.path.join(script_dir, "backgrounds", "flight_bg.png")
-    bg_image = tk.PhotoImage(file=bg_path)
-
-    bg_label = tk.Label(galaxy, image=bg_image)
-    bg_label.image = bg_image
-    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-    # Load planet buttons
-    advance_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "planet_advance.png")).subsample(2,2)
-    moderate_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "planet_moderate.png")).subsample(2,2)
-    easy_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "planet_easy.png")).subsample(2,2)
-
-    # Planet Buttons
-    advance_btn = tk.Button(
-        galaxy, image=advance_img, bd=0, highlightthickness=0,
-        activebackground="#000000",
-        command=lambda: start_mission("Advanced")
-    )
-    advance_btn.image = advance_img   # <<< MUST ADD
-    advance_btn.place(x=55, y=115)
-
-    moderate_btn = tk.Button(
-        galaxy, image=moderate_img, bd=0, highlightthickness=0,
-        activebackground="#000000",
-        command=lambda: start_mission("Moderate")
-    )
-    moderate_btn.image = moderate_img  # <<< MUST ADD
-    moderate_btn.place(x=130, y=375)
-
-    easy_btn = tk.Button(
-        galaxy, image=easy_img, bd=0, highlightthickness=0,
-        activebackground="#000000",
-        command=lambda: start_mission("Easy")
-    )
-    easy_btn.image = easy_img  # <<< MUST ADD
-    easy_btn.place(x=355, y=485)
-
-
-    # Return Button
-    return_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "back_btn.png")).subsample(4,4)
-    return_btn = tk.Button(
-        galaxy,
-        image=return_img,
-        bg="#0B0C10",
-        activebackground="#0B0C10",
-        borderwidth=0,
-        highlightthickness=0,
-        command=mission_instructions
-    )
-    return_btn.image = return_img
-    return_btn.place(relx=0.97, rely=0.98, anchor="se")
-
-
-# Start Mission
-def start_mission(level):
-    global mission_mode, current_question, current_score
-    mission_mode = level
-    current_question = 0
-    current_score = 0
-    next_question()
-
-
-# Random Values by Difficulty
-def random_values():
-    if mission_mode == "Easy":
-        return random.randint(1, 9), random.randint(1, 9)
-    elif mission_mode == "Moderate":
-        return random.randint(10, 99), random.randint(10, 99)
-    else:
+    # Random Values
+    def random_values(self):
+        if self.mission_mode == "Easy":
+            return random.randint(1, 9), random.randint(1, 9)
+        elif self.mission_mode == "Moderate":
+            return random.randint(10, 99), random.randint(10, 99)
         return random.randint(1000, 9999), random.randint(1000, 9999)
 
+    # HUD Display
+    def display_top_info(self):
+        top = tk.Frame(self.root, bg="")
+        top.pack(fill="x", pady=5, padx=15)
+        
+        left = tk.Frame(top, bg="")
+        left.pack(side="left")
+        tk.Label(left, text=f"Mode: {self.mission_mode}", font=("Consolas", 18, "bold"),
+                 fg="#66FCF1", bg="#000000").pack()
+        tk.Label(left, text=f"Score: {self.current_score}", font=("Consolas", 18, "bold"),
+                 fg="#66FCF1", bg="#000000").pack()
 
-# HUD (Mode + Score + Progress)
-def display_top_info():
-    top_frame = tk.Frame(galaxy, bg="", highlightthickness=0, bd=0)
-    top_frame.pack(fill="x", pady=5, padx=15)
+        right = tk.Frame(top, bg="")
+        right.pack(side="right")
+        tk.Label(right, text=f"Q {self.current_question + 1}/{self.total_questions}",
+                 font=("Consolas", 18, "bold"), fg="#66FCF1", bg="#0B0C10").pack()
 
-    left_frame = tk.Frame(top_frame, bg="", highlightthickness=0, bd=0)
-    left_frame.pack(side="left")
+        self.mission_progress = ttk.Progressbar(right, orient="horizontal",
+                                                length=165, mode="determinate")
+        self.mission_progress.pack(pady=9, padx=(0, 7))
+        self.animate_progress((self.current_question / self.total_questions) * 100)
 
-    create_label(left_frame, f"Mode: {mission_mode}", font=("Consolas", 18, "bold"), fg="#66FCF1")
-    create_label(left_frame, f"Score: {current_score}", font=("Consolas", 18, "bold"), fg="#66FCF1")
+    # Question Screen
+    def next_question(self):
+        self.clear_screen()
 
-    right_frame = tk.Frame(top_frame, bg="", highlightthickness=0, bd=0)
-    right_frame.pack(side="right")
+        bg = self.load_image(self.bg_dir, "quiz_bg.png")
+        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_quiz_ref = bg
 
-    create_label(right_frame, f"Q {current_question+1}/{total_questions}",
-                 font=("Consolas", 18, "bold"), fg="#66FCF1")
+        self.display_top_info()
 
-    global mission_progress
-    mission_progress = ttk.Progressbar(right_frame, orient="horizontal", length=165, mode="determinate")
-    mission_progress.pack(pady=9, padx=(0,7))
+        self.num_a, self.num_b = self.random_values()
+        self.operator_symbol = random.choice(["+", "-"])
+        self.attempt_count = 0
 
-    animate_progress((current_question / total_questions) * 100)
+        hud = tk.Frame(self.root, bg="#000000")
+        hud.place(relx=0.5, rely=0.49, anchor="center")
 
+        tk.Label(
+            hud,
+            text=f"{self.num_a} {self.operator_symbol} {self.num_b} = ?",
+            font=("Consolas", 27, "bold"),
+            fg="#66FCF1",
+            bg="#000000"
+        ).pack(pady=(20, 18))
 
-# Question + Input Screen
-def next_question():
-    clear_galaxy()
-    global num_a, num_b, operator_symbol, pilot_entry, feedback_label, attempt_count
+        self.pilot_entry = tk.Entry(
+            hud, font=("Consolas", 20), justify="center",
+            width=12, relief="flat", bg="#485B63", fg="#66FCF1",
+            insertbackground="#66FCF1"
+        )
+        self.pilot_entry.pack(pady=(5, 14))
 
-    script_dir = os.path.dirname(__file__)
-    bg_path = os.path.join(script_dir, "backgrounds", "quiz_bg.png")
-    quiz_bg = tk.PhotoImage(file=bg_path)
+        self.feedback_label = tk.Label(
+            hud, text="", font=("Consolas", 14),
+            fg="#C5C6C7", bg="#000000", wraplength=260, justify="center"
+        )
+        self.feedback_label.pack(pady=(5, 10))
 
-    bg_label = tk.Label(galaxy, image=quiz_bg)
-    bg_label.image = quiz_bg
-    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-    display_top_info()
-
-    # Submit Button Image
-    submit_img = tk.PhotoImage(
-        file=os.path.join(script_dir, "buttons", "submit_btn.png")
-    ).subsample(2,2)
-
-    hud_frame = tk.Frame(galaxy, bg="#000000")
-    hud_frame.place(relx=0.5, rely=0.49, anchor="center")
-
-    num_a, num_b = random_values()
-    operator_symbol = random.choice(["+", "-"])
-    attempt_count = 0
-
-    tk.Label(
-        hud_frame,
-        text=f"{num_a} {operator_symbol} {num_b} = ?",
-        font=("Consolas", 27, "bold"),
-        fg="#66FCF1",
-        bg="#000000"
-    ).pack(pady=(20,18))
-
-    pilot_entry = tk.Entry(
-        hud_frame,
-        font=("Consolas", 20),
-        justify="center",
-        width=12,
-        relief="flat",
-        bg="#485B63",
-        fg="#66FCF1",
-        insertbackground="#66FCF1"
-    )
-    pilot_entry.pack(pady=(5,14))
-
-    feedback_label = tk.Label(
-        hud_frame,
-        text="",
-        font=("Consolas", 14),
-        fg="#C5C6C7",
-        bg="#000000",
-        wraplength=260,
-        justify="center"
-    )
-    feedback_label.pack(pady=(5,10))
-
-    submit_btn = tk.Button(
-        galaxy,
-        image=submit_img,
-        command=verify_answer,
-        borderwidth=0,
-        highlightthickness=0,
-        bg="#000000",
-        activebackground="#000000"
-    )
-    submit_btn.image = submit_img
-    submit_btn.place(relx=0.4, rely=0.74, x=9, y=3)
+        submit_img = self.load_image(self.btn_dir, "submit_btn.png", (2, 2))
+        submit_btn = tk.Button(
+            self.root, image=submit_img, command=lambda: [self.click_sound.play(), self.verify_answer()],  # play click sound first,
+            borderwidth=0, bg="#000000", activebackground="#000000"
+        )
+        submit_btn.image = submit_img
+        submit_btn.place(relx=0.4, rely=0.74, x=9, y=3)
 
 
-# Verify Answer + Attempts
-def verify_answer():
-    global current_score, current_question, attempt_count
+    # Answer Check
+    def verify_answer(self):
+        inp = self.pilot_entry.get().strip()
 
-    user_input = pilot_entry.get().strip()
-
-    if user_input == "":
-        feedback_label.config(text="Enter a number before submitting, cadet!", fg="#FF6961")
-        return
-
-    try:
-        user_input = int(user_input)
-        correct_answer = eval(f"{num_a} {operator_symbol} {num_b}")
-
-        success_msgs = [
-            "Stellar precision!", "Cosmic calculation!", "Spot on, navigator!",
-            "Perfect orbit!", "Galaxy-level accuracy!"
-        ]
-
-        retry_msgs = [
-            "Orbit misaligned, try again!", "Not quite there, pilot!",
-            "Adjust your cosmic trajectory!", "Recalculate coordinates!",
-            "Steady... reattempt your landing!"
-        ]
-
-        if user_input == correct_answer:
-            current_score += 10 if attempt_count == 0 else 5
-            feedback_label.config(text=random.choice(success_msgs), fg="#45A29E")
-            galaxy.after(1200, move_next)
+        if inp == "":
+            self.feedback_label.config(text="Enter a number before submitting, cadet!", fg="#FF6961")
+            self.wrong_sound.play()
             return
 
-        attempt_count += 1
+        try:
+            inp = int(inp)
+            correct = eval(f"{self.num_a} {self.operator_symbol} {self.num_b}")
 
-        if attempt_count == 1:
-            feedback_label.config(text=random.choice(retry_msgs), fg="#FF6961")
+            if inp == correct:
+                self.current_score += 10 if self.attempt_count == 0 else 5
+                self.feedback_label.config(text="Stellar precision!", fg="#45A29E")
+                self.correct_sound.play()  # play correct sound
+                self.root.after(1200, self.move_next)
+                return
+
+            self.attempt_count += 1
+            self.wrong_sound.play()  # play wrong sound
+            if self.attempt_count == 1:
+                self.feedback_label.config(text="Orbit misaligned, try again!", fg="#FF6961")
+            else:
+                self.feedback_label.config(text="Mission failed for this challenge.", fg="#FF6961")
+                self.root.after(1200, self.move_next)
+
+        except ValueError:
+            self.feedback_label.config(text="Numbers only, space traveler!", fg="#FF6961")
+            self.wrong_sound.play()  # play wrong sound if non-number
+
+    # Next Question or Results
+    def move_next(self):
+        self.current_question += 1
+        if self.current_question < self.total_questions:
+            self.next_question()
         else:
-            feedback_label.config(text="Mission failed for this challenge.", fg="#FF6961")
-            galaxy.after(1200, move_next)
+            self.display_results()
 
-    except ValueError:
-        feedback_label.config(text="Numbers only, space traveler!", fg="#FF6961")
+    # Results Screen
+    def display_results(self):
+        self.clear_screen()
 
+        bg = self.load_image(self.bg_dir, "results_bg.png")
+        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_results_ref = bg
 
-# Move to Next or Finish
-def move_next():
-    global current_question
-    current_question += 1
-    if current_question < total_questions:
-        next_question()
-    else:
-        display_results()
+        tk.Label(
+            self.root, text=f"Final Score: {self.current_score}/100",
+            font=("Consolas", 20, "bold"), fg="#66FCF1", bg="#000000"
+        ).place(relx=0.5, rely=0.47, anchor="center")
 
+        if self.current_score >= 90:
+            msg = "MISSION REPORT: Excellent control, Commander."
+        elif self.current_score >= 70:
+            msg = "COMMAND UPDATE: Strong navigation detected."
+        elif self.current_score >= 50:
+            msg = "STATUS: Acceptable trajectory. Further training advised."
+        else:
+            msg = "ALERT: System recalibration required. Debrief pending."
 
-# Results Page
-def display_results():
-    clear_galaxy()
+        tk.Label(
+            self.root, text=msg, font=("Consolas", 14, "bold"),
+            fg="#C5C6C7", bg="#000000", wraplength=420, justify="center"
+        ).place(relx=0.5, rely=0.58, anchor="center")
 
-    script_dir = os.path.dirname(__file__)
-    bg_path = os.path.join(script_dir, "backgrounds", "results_bg.png")
-    bg_image = tk.PhotoImage(file=bg_path)
+        play_img = self.load_image(self.btn_dir, "relaunch_btn.png", (3, 3))
+        quit_img = self.load_image(self.btn_dir, "space_exit_btn.png", (3, 3))
 
-    bg_label = tk.Label(galaxy, image=bg_image)
-    bg_label.image = bg_image
-    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        play_btn = tk.Button(
+            self.root, image=play_img, command=lambda: [self.click_sound.play(), self.launch_portal()],  # click sound,
+            borderwidth=0, highlightthickness=0, bg="#000000", activebackground="#000000"
+        )
+        play_btn.image = play_img
+        play_btn.place(relx=0.25, rely=0.93, anchor="center")
 
-    score_label = tk.Label(
-        galaxy,
-        text=f"Final Score: {current_score}/100",
-        font=("Consolas", 20, "bold"),
-        fg="#66FCF1",
-        bg="#000000"
-    )
-    score_label.place(relx=0.5, rely=0.47, anchor="center")
+        quit_btn = tk.Button(
+            self.root, image=quit_img, command=lambda: [self.click_sound.play(), self.root.after(150, self.quit_game)],  # click sound,
+            borderwidth=0, highlightthickness=0, bg="#FFFFFF", activebackground="#000000"
+        )
+        quit_btn.image = quit_img
+        quit_btn.place(relx=0.75, rely=0.93, anchor="center")
 
-    if current_score >= 90:
-        feedback = "MISSION REPORT: Excellent control, Commander."
-    elif current_score >= 70:
-        feedback = "COMMAND UPDATE: Strong navigation detected."
-    elif current_score >= 50:
-        feedback = "STATUS: Acceptable trajectory. Further training advised."
-    else:
-        feedback = "ALERT: System recalibration required. Debrief pending."
-
-    feedback_label = tk.Label(
-        galaxy,
-        text=feedback,
-        font=("Consolas", 14, "bold"),
-        fg="#C5C6C7",
-        bg="#000000",
-        wraplength=420,
-        justify="center"
-    )
-    feedback_label.place(relx=0.5, rely=0.58, anchor="center")
-
-    play_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "relaunch_btn.png")).subsample(3,3)
-    quit_img = tk.PhotoImage(file=os.path.join(script_dir, "buttons", "space_exit_btn.png")).subsample(3,3)
-
-    play_btn = tk.Button(
-        galaxy,
-        image=play_img,
-        borderwidth=0,
-        highlightthickness=0,
-        bg="#000000",
-        activebackground="#000000",
-        command=launch_portal
-    )
-    play_btn.image = play_img
-    play_btn.place(relx=0.25, rely=0.93, anchor="center")
-
-    quit_btn = tk.Button(
-        galaxy,
-        image=quit_img,
-        borderwidth=0,
-        highlightthickness=0,
-        bg="#000000",
-        activebackground="#000000",
-        command=galaxy.destroy
-    )
-    quit_btn.image = quit_img
-    quit_btn.place(relx=0.75, rely=0.93, anchor="center")
+        # Stop music and close game
+    def quit_game(self):
+        pygame.mixer.music.stop()
+        self.root.destroy()
 
 
-# Run App
-launch_portal()
-galaxy.mainloop()
+    # Start Game Loop
+    def run(self):
+        self.launch_portal()
+        self.root.mainloop()
+
+
+# Launch App
+if __name__ == "__main__":
+    MathNebula().run()
