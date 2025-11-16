@@ -79,7 +79,22 @@ class MathNebula:
         self.bg_dir = os.path.join(self.script_dir, "backgrounds")
         self.btn_dir = os.path.join(self.script_dir, "buttons")
         self.snd_dir = os.path.join(self.script_dir, "sounds")
-        
+
+        # Preload all GIFs once
+        self.gifs = {}
+        gif_names = [
+            "bg_launch.gif",
+            "mission_briefing.gif",
+            "flight_bg.gif",
+            "quiz_bg.gif",
+            "results_bg.gif"
+        ]
+
+        for name in gif_names:
+            path = os.path.join(self.bg_dir, name)
+            frames = AnimatedGIF.preload_gif(path)  # preload frames from disk
+            self.gifs[name] = frames  # store frames only, not Label yet
+
 
         # Initialize pygame mixer
         pygame.mixer.init()
@@ -119,8 +134,7 @@ class MathNebula:
     def launch_portal(self):
         self.clear_screen()
 
-        gif_path = os.path.join(self.bg_dir, "bg_launch.gif")
-        bg = AnimatedGIF(self.root, gif_path)
+        bg = AnimatedGIF(self.root, frames=self.gifs["bg_launch.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_launch_ref = bg
 
@@ -145,34 +159,32 @@ class MathNebula:
     def mission_instructions(self):
         self.clear_screen()
 
-        gif_path = os.path.join(self.bg_dir, "mission_briefing.gif")
-        bg = AnimatedGIF(self.root, gif_path)
+        bg = AnimatedGIF(self.root, frames=self.gifs["mission_briefing.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_brief_ref = bg
 
-        explore_img = self.load_image(self.btn_dir, "explore_btn.png", (4, 3))
-        back_img = self.load_image(self.btn_dir, "back_btn.png", (4, 4))
+        explore_img = self.load_image(self.btn_dir, "explore_btn.png", (3, 3))
+        back_img = self.load_image(self.btn_dir, "back_btn.png", (3, 4))
 
         explore_btn = tk.Button(
             self.root, image=explore_img, command=lambda: [self.click_sound.play(), self.select_difficulty()],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         explore_btn.image = explore_img
-        explore_btn.place(relx=0.72, rely=0.74, anchor="center")
+        explore_btn.place(relx=0.72, rely=0.90, anchor="center")
 
         back_btn = tk.Button(
             self.root, image=back_img, command=lambda: [self.click_sound.play(), self.launch_portal()],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         back_btn.image = back_img
-        back_btn.place(relx=0.29, rely=0.75, anchor="center")
+        back_btn.place(relx=0.29, rely=0.90, anchor="center")
 
     # Difficulty Select
     def select_difficulty(self):
         self.clear_screen()
 
-        gif_path = os.path.join(self.bg_dir, "flight_bg.gif")
-        bg = AnimatedGIF(self.root, gif_path)
+        bg = AnimatedGIF(self.root, frames=self.gifs["flight_bg.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_flight_ref = bg
 
@@ -246,8 +258,7 @@ class MathNebula:
     def next_question(self):
         self.clear_screen()
 
-        gif_path = os.path.join(self.bg_dir, "quiz_bg.gif")
-        bg = AnimatedGIF(self.root, gif_path)
+        bg = AnimatedGIF(self.root, frames=self.gifs["quiz_bg.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_quiz_ref = bg
 
@@ -323,7 +334,7 @@ class MathNebula:
             self.feedback_label.config(text="Numbers only, space traveler!", fg="#FF6961")
             self.wrong_sound.play()  # play wrong sound if non-number
 
-    # Next Question or results                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+    # Next Question or Results                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     def move_next(self):
         self.current_question += 1
         if self.current_question < self.total_questions:
@@ -335,11 +346,9 @@ class MathNebula:
     def display_results(self):
         self.clear_screen()
 
-        gif_path = os.path.join(self.bg_dir, "results_bg.gif")
-        bg = AnimatedGIF(self.root, gif_path)
+        bg = AnimatedGIF(self.root, frames=self.gifs["results_bg.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_results_ref = bg
-
 
         tk.Label(
             self.root, text=f"Final Score: {self.current_score}/100",
