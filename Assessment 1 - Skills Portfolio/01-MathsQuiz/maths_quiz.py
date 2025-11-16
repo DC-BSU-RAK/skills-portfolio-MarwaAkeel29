@@ -1,8 +1,51 @@
 import tkinter as tk
 from tkinter import ttk
+from PIL import Image, ImageTk, ImageSequence
 import random
 import os
 import pygame
+
+
+class AnimatedGIF(tk.Label):
+    def __init__(self, parent, gif_path=None, frames=None):
+        """
+        Can initialize with either:
+        - gif_path: path to GIF file (loads from disk)
+        - frames: list of (PhotoImage, duration) tuples (preloaded)
+        """
+        self.frames = []
+
+        if frames:  # Use preloaded frames
+            self.frames = frames
+        elif gif_path:  # Load from file
+            gif = Image.open(gif_path)
+            for frame in ImageSequence.Iterator(gif):
+                duration = frame.info.get('duration', 100)  # default 100ms
+                self.frames.append((ImageTk.PhotoImage(frame.convert("RGBA")), duration))
+        else:
+            raise ValueError("Either gif_path or frames must be provided.")
+
+        super().__init__(parent, image=self.frames[0][0], borderwidth=0)
+        self.idx = 0
+        self.animate()
+
+    def animate(self):
+        frame, duration = self.frames[self.idx]
+        self.config(image=frame)
+        self.idx = (self.idx + 1) % len(self.frames)
+        self.after(duration, self.animate)
+
+    @staticmethod
+    def preload_gif(gif_path):
+        """
+        Preloads all frames of a GIF from disk and returns a list of (PhotoImage, duration)
+        """
+        frames = []
+        gif = Image.open(gif_path)
+        for frame in ImageSequence.Iterator(gif):
+            duration = frame.info.get('duration', 100)
+            frames.append((ImageTk.PhotoImage(frame.convert("RGBA")), duration))
+        return frames
 
 
 class MathNebula:
@@ -36,6 +79,7 @@ class MathNebula:
         self.bg_dir = os.path.join(self.script_dir, "backgrounds")
         self.btn_dir = os.path.join(self.script_dir, "buttons")
         self.snd_dir = os.path.join(self.script_dir, "sounds")
+        
 
         # Initialize pygame mixer
         pygame.mixer.init()
@@ -50,8 +94,7 @@ class MathNebula:
         self.click_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "click.mp3"))
         self.correct_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "correct.mp3"))
         self.wrong_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "wrong.mp3"))
-        self.start_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "start.wav"))
-        self.exit_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "exit.wav"))
+        self.game_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "game.wav"))
 
 
     # Utility Helpers
@@ -76,22 +119,23 @@ class MathNebula:
     def launch_portal(self):
         self.clear_screen()
 
-        bg = self.load_image(self.bg_dir, "bg_launch.png")
-        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        gif_path = os.path.join(self.bg_dir, "bg_launch.gif")
+        bg = AnimatedGIF(self.root, gif_path)
+        bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_launch_ref = bg
 
         start_img = self.load_image(self.btn_dir, "start_btn.png", (4, 4))
         exit_img = self.load_image(self.btn_dir, "exit_btn.png", (4, 4))
 
         start_btn = tk.Button(
-            self.root, image=start_img, command=lambda: [self.start_sound.play(), self.mission_instructions()],
+            self.root, image=start_img, command=lambda: [self.game_sound.play(), self.mission_instructions()],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         start_btn.image = start_img
         start_btn.place(relx=0.15, rely=0.9, anchor="sw")
 
         exit_btn = tk.Button(
-            self.root, image=exit_img, command=lambda: [self.start_sound.play(), self.root.after(200, self.quit_game)],
+            self.root, image=exit_img, command=lambda: [self.game_sound.play(), self.root.after(200, self.quit_game)],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         exit_btn.image = exit_img
@@ -101,8 +145,9 @@ class MathNebula:
     def mission_instructions(self):
         self.clear_screen()
 
-        bg = self.load_image(self.bg_dir, "mission_briefing.png")
-        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        gif_path = os.path.join(self.bg_dir, "mission_briefing.gif")
+        bg = AnimatedGIF(self.root, gif_path)
+        bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_brief_ref = bg
 
         explore_img = self.load_image(self.btn_dir, "explore_btn.png", (4, 3))
@@ -126,9 +171,11 @@ class MathNebula:
     def select_difficulty(self):
         self.clear_screen()
 
-        bg = self.load_image(self.bg_dir, "flight_bg.png")
-        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        gif_path = os.path.join(self.bg_dir, "flight_bg.gif")
+        bg = AnimatedGIF(self.root, gif_path)
+        bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_flight_ref = bg
+
 
         advance = self.load_image(self.btn_dir, "planet_advance.png", (2, 2))
         moderate = self.load_image(self.btn_dir, "planet_moderate.png", (2, 2))
@@ -152,7 +199,7 @@ class MathNebula:
 
         back_img = self.load_image(self.btn_dir, "back_btn.png", (4, 4))
         back_btn = tk.Button(
-            self.root, image=back_img, command=lambda: [self.start_sound.play(), self.mission_instructions()],
+            self.root, image=back_img, command=lambda: [self.game_sound.play(), self.mission_instructions()],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         back_btn.image = back_img
@@ -199,9 +246,11 @@ class MathNebula:
     def next_question(self):
         self.clear_screen()
 
-        bg = self.load_image(self.bg_dir, "quiz_bg.png")
-        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        gif_path = os.path.join(self.bg_dir, "quiz_bg.gif")
+        bg = AnimatedGIF(self.root, gif_path)
+        bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_quiz_ref = bg
+
 
         self.display_top_info()
 
@@ -274,7 +323,7 @@ class MathNebula:
             self.feedback_label.config(text="Numbers only, space traveler!", fg="#FF6961")
             self.wrong_sound.play()  # play wrong sound if non-number
 
-    # Next Question or Results
+    # Next Question or results                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     def move_next(self):
         self.current_question += 1
         if self.current_question < self.total_questions:
@@ -286,9 +335,11 @@ class MathNebula:
     def display_results(self):
         self.clear_screen()
 
-        bg = self.load_image(self.bg_dir, "results_bg.png")
-        tk.Label(self.root, image=bg).place(x=0, y=0, relwidth=1, relheight=1)
+        gif_path = os.path.join(self.bg_dir, "results_bg.gif")
+        bg = AnimatedGIF(self.root, gif_path)
+        bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_results_ref = bg
+
 
         tk.Label(
             self.root, text=f"Final Score: {self.current_score}/100",
@@ -313,14 +364,14 @@ class MathNebula:
         quit_img = self.load_image(self.btn_dir, "space_exit_btn.png", (3, 3))
 
         play_btn = tk.Button(
-            self.root, image=play_img, command=lambda: [self.click_sound.play(), self.launch_portal()],  # click sound,
+            self.root, image=play_img, command=lambda: [self.game_sound.play(), self.launch_portal()],  # click sound,
             borderwidth=0, highlightthickness=0, bg="#000000", activebackground="#000000"
         )
         play_btn.image = play_img
         play_btn.place(relx=0.25, rely=0.93, anchor="center")
 
         quit_btn = tk.Button(
-            self.root, image=quit_img, command=lambda: [self.click_sound.play(), self.root.after(150, self.quit_game)],  # click sound,
+            self.root, image=quit_img, command=lambda: [self.game_sound.play(), self.root.after(150, self.quit_game)],  # click sound,
             borderwidth=0, highlightthickness=0, bg="#FFFFFF", activebackground="#000000"
         )
         quit_btn.image = quit_img
