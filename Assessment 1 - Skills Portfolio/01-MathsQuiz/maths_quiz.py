@@ -56,8 +56,14 @@ class MathNebula:
         self.root.title("Mind Matrix: Space Arithmetic Quest")
         self.root.geometry("600x600")
         self.root.config(bg="#0B0C10")
+        self.root.resizable(False, False)
+
 
         self.root.protocol("WM_DELETE_WINDOW", self.quit_game)
+
+        # chosen space rank/title (no real-name)
+        self.space_title = "Cadet"   # default; will be overwritten by selection
+
 
         # Game state
         self.mission_mode = ""
@@ -111,8 +117,164 @@ class MathNebula:
         self.wrong_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "wrong.mp3"))
         self.game_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "game.wav"))
 
+    def choose_title_screen(self):
+        # Create popup window
+        title_win = tk.Toplevel(self.root)
+        title_win.title("Select Space Rank")
+        title_win.geometry("240x200")
+        title_win.resizable(False, False)
+
+        # Center popup relative to main window
+        self.root.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - 210
+        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - 190
+        title_win.geometry(f"+{x}+{y}")
+
+        # Load PNG background
+        bg_path = os.path.join(self.bg_dir, "bg_launch.png")
+        bg_img = ImageTk.PhotoImage(Image.open(bg_path).resize((420, 380)))
+
+        bg_label = tk.Label(title_win, image=bg_img)
+        bg_label.image = bg_img
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+
+        SPACE_TITLES = [
+            "Commander",    # classic top rank
+            "Captain",      # familiar, strong
+            "Navigator",    # skilled in direction
+            "Astrogator",   # sci-fi term for star navigator
+            "Cosmonaut",    # astronaut variant
+            "Stellar",      # general space operative
+            "Quantum",      # futuristic, techy
+            "Vanguard",     # front-line explorer
+            "Scout",        # reconnaissance role
+            "Cadet"         # beginner rank
+        ]
+
+
+        self.title_var = tk.StringVar(value=self.space_title)
+
+        dropdown = ttk.Combobox(
+            title_win, 
+            textvariable=self.title_var,
+            values=SPACE_TITLES,
+            font=("Consolas", 13),
+            state="readonly",
+            width=18,
+            height=20
+        )
+        dropdown.place(relx=0.5, rely=0.50, anchor="center")
+
+
+        def save_and_close():
+            self.space_title = self.title_var.get()
+            self.click_sound.play()
+            title_win.destroy()
+            self.mission_instructions()
+
+        # Load continue button
+        continue_img = self.load_image(self.btn_dir, "continue_btn.png", (3, 2))
+
+        continue_btn = tk.Button(
+            title_win,  # Parent is the popup window!
+            image=continue_img,
+            command=save_and_close,  # call the inner function
+            borderwidth=0,
+            bg="#0B0C10",
+            activebackground="#0B0C10"
+        )
+        continue_btn.image = continue_img
+        continue_btn.place(relx=0.5, rely=0.75, anchor="center")
+
+    def save_title_and_proceed(self):
+        self.space_title = self.title_var.get()
+        self.mission_instructions()
+
 
     # Utility Helpers
+    def add_profile_button(self):
+        profile_img = self.load_image(self.btn_dir, "astronaut_profile.png", (2, 2))
+
+        if hasattr(self, "profile_btn"):
+            self.profile_btn.destroy()
+
+        self.profile_btn = tk.Button(
+            self.root,
+            image=profile_img,
+            command=self.open_profile_window, 
+            borderwidth=0,
+            bg="#0B0C10",
+            activebackground="#0B0C10"
+        )
+        self.profile_btn.image = profile_img
+        self.profile_btn.place(relx=0.99, rely=0.01, anchor="ne")
+
+    def open_profile_window(self):
+        profile_win = tk.Toplevel(self.root)
+        profile_win.title("Profile")
+        profile_win.geometry("400x300")
+        profile_win.resizable(False, False)
+
+        # Background PNG
+        bg_path = os.path.join(self.bg_dir, "profile_bg.png")
+        bg_img = ImageTk.PhotoImage(Image.open(bg_path).resize((400, 300)))
+
+        bg_label = tk.Label(profile_win, image=bg_img)
+        bg_label.image = bg_img
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # ----------------------------
+        # Space Title / Rank (Top Right)
+        # ----------------------------
+        tk.Label(
+            profile_win,
+            text=f"Rank:{self.space_title}",
+            font=("Consolas", 17, "bold"),
+            fg="#66FCF1",
+            bg="#000000"
+        ).place(x=160, y=60)
+
+        # ----------------------------
+        # Score Display (Right Side)
+        # ----------------------------
+        tk.Label(
+            profile_win,
+            text=f"Score:{self.current_score}",
+            font=("Consolas", 17, "bold"),
+            fg="#66FCF1",
+            bg="#000000"
+        ).place(x=160, y=100)
+
+        # ----------------------------
+        # Sound Toggle
+        # ----------------------------
+        mute_img = self.load_image(self.btn_dir, "mute.png", (3, 3))
+        unmute_img = self.load_image(self.btn_dir, "unmute.png", (3, 3))
+
+        self.is_muted = getattr(self, "is_muted", False)
+
+        def toggle_sound():
+            if self.is_muted:
+                pygame.mixer.music.set_volume(0.3)
+                sound_btn.config(image=mute_img)
+                self.is_muted = False
+            else:
+                pygame.mixer.music.set_volume(0)
+                sound_btn.config(image=unmute_img)
+                self.is_muted = True
+
+        sound_btn = tk.Button(
+            profile_win,
+            image=mute_img if not self.is_muted else unmute_img,
+            command=toggle_sound,
+            borderwidth=0,
+            bg="#0B0C10",
+            activebackground="#0B0C10"
+        )
+        sound_btn.place(relx=0.90, rely=0.07, anchor="ne")
+    
+
     def clear_screen(self):
         for w in self.root.winfo_children():
             w.destroy()
@@ -129,6 +291,7 @@ class MathNebula:
         if sub:
             img = img.subsample(*sub)
         return img
+    
 
     # Home Screen
     def launch_portal(self):
@@ -141,19 +304,21 @@ class MathNebula:
         start_img = self.load_image(self.btn_dir, "start_btn.png", (4, 4))
         exit_img = self.load_image(self.btn_dir, "exit_btn.png", (4, 4))
 
+        self.add_profile_button()
+
         start_btn = tk.Button(
-            self.root, image=start_img, command=lambda: [self.game_sound.play(), self.mission_instructions()],
+            self.root, image=start_img, command=lambda: [self.game_sound.play(), self.choose_title_screen()],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         start_btn.image = start_img
-        start_btn.place(relx=0.15, rely=0.9, anchor="sw")
+        start_btn.place(relx=0.15, rely=0.97, anchor="sw")
 
         exit_btn = tk.Button(
             self.root, image=exit_img, command=lambda: [self.game_sound.play(), self.root.after(200, self.quit_game)],
             borderwidth=0, bg="#0B0C10", activebackground="#0B0C10"
         )
         exit_btn.image = exit_img
-        exit_btn.place(relx=0.85, rely=0.9, anchor="se")
+        exit_btn.place(relx=0.85, rely=0.97, anchor="se")
 
     # Mission Instructions
     def mission_instructions(self):
@@ -162,6 +327,8 @@ class MathNebula:
         bg = AnimatedGIF(self.root, frames=self.gifs["mission_briefing.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_brief_ref = bg
+
+        self.add_profile_button()
 
         explore_img = self.load_image(self.btn_dir, "explore_btn.png", (3, 3))
         back_img = self.load_image(self.btn_dir, "back_btn.png", (3, 4))
@@ -187,7 +354,6 @@ class MathNebula:
         bg = AnimatedGIF(self.root, frames=self.gifs["flight_bg.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_flight_ref = bg
-
 
         advance = self.load_image(self.btn_dir, "planet_advance.png", (2, 2))
         moderate = self.load_image(self.btn_dir, "planet_moderate.png", (2, 2))
@@ -261,7 +427,6 @@ class MathNebula:
         bg = AnimatedGIF(self.root, frames=self.gifs["quiz_bg.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_quiz_ref = bg
-
 
         self.display_top_info()
 
@@ -349,6 +514,8 @@ class MathNebula:
         bg = AnimatedGIF(self.root, frames=self.gifs["results_bg.gif"])
         bg.place(x=0, y=0, relwidth=1, relheight=1)
         self.bg_results_ref = bg
+
+        self.add_profile_button()
 
         tk.Label(
             self.root, text=f"Final Score: {self.current_score}/100",
