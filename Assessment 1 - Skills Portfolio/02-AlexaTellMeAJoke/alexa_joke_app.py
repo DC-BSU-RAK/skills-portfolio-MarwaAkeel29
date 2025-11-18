@@ -1,17 +1,40 @@
 import tkinter as tk
 from tkinter import messagebox
+from PIL import Image, ImageTk, ImageSequence   
 import random
 import os
 
 
 #     H A C K E R   J O K E   M A C H I N E   (v1.0)
 
+
+#created class for gifs  
+class AnimatedGIF(tk.Label):
+    def __init__(self, parent, gif_path):
+        gif = Image.open(gif_path)
+        self.frames = []
+        for frame in ImageSequence.Iterator(gif):
+            img = ImageTk.PhotoImage(frame.copy().convert("RGBA"))
+            duration = frame.info.get("duration", 80)
+            self.frames.append((img, duration))
+
+        super().__init__(parent, image=self.frames[0][0], borderwidth=0)
+        self.idx = 0
+        self.animate()
+
+    def animate(self):
+        frame, delay = self.frames[self.idx]
+        self.config(image=frame)
+        self.idx = (self.idx + 1) % len(self.frames)
+        self.after(delay, self.animate)
+
+
 class JokeMatrix:
 
     def __init__(self, root):
         self.root = root
         self.root.title("Joke Terminal v1.0")
-        self.root.geometry("650x500")
+        self.root.geometry("550x500")
         self.root.config(bg="black")
 
         # store jokes
@@ -55,33 +78,34 @@ class JokeMatrix:
         # reset for next session
         self.first_time = True
 
-        # user will add their own GIF
-        img_path = os.path.join(os.path.dirname(__file__), "hacker_bg.gif")
-        self.bg = tk.PhotoImage(file=img_path)
-
-        # background image
-        tk.Label(self.root, image=self.bg, borderwidth=0).place(
-            x=0, y=0, relwidth=1, relheight=1
-        )
+        # animated background gif
+        gif_path = os.path.join(os.path.dirname(__file__), "hacker_bg.gif")
+        self.bg = AnimatedGIF(self.root, gif_path)
+        self.bg.place(x=0, y=0, relwidth=1, relheight=1)
 
         # center-bottom launch button
+        btn_img_path = os.path.join(os.path.dirname(__file__), "enter_btn.png")
+        self.enter_btn_img = tk.PhotoImage(file=btn_img_path)
+
         launch_btn = tk.Button(
             self.root,
-            text="ENTER HACKER ZONE",
-            font=("Consolas", 16, "bold"),
-            fg="#00FF88",
+            image=self.enter_btn_img,
+            borderwidth=0,
             bg="black",
-            activeforeground="#00FF88",
             activebackground="black",
-            borderwidth=2,
             command=self.terminal_screen
         )
-        launch_btn.place(relx=0.5, rely=0.85, anchor="center")
+        launch_btn.place(relx=0.5, rely=0.88, anchor="center")
 
   
     # PAGE 2: TERMINAL SCREEN UI
     def terminal_screen(self):
         self.wipe()
+
+        # animated background gif for second page
+        gif_path = os.path.join(os.path.dirname(__file__), "terminal_bg.gif")
+        self.bg2 = AnimatedGIF(self.root, gif_path)
+        self.bg2.place(x=0, y=0, relwidth=1, relheight=1)
 
         # reset joke button state
         self.first_time = True
@@ -122,26 +146,31 @@ class JokeMatrix:
         btn_frame = tk.Frame(self.root, bg="black")
         btn_frame.pack(side="bottom", pady=30)
 
-        # LEFT SIDE — joke button (dynamic)
+        # LOAD button images
+        joke_btn_img_path = os.path.join(os.path.dirname(__file__), "joke_btn.png")
+        punch_btn_img_path = os.path.join(os.path.dirname(__file__), "punch_btn.png")
+
+        self.joke_btn_img = tk.PhotoImage(file=joke_btn_img_path)
+        self.punch_btn_img = tk.PhotoImage(file=punch_btn_img_path)
+
+        # joke button
         self.joke_btn = tk.Button(
             btn_frame,
-            text="Alexa tell me a Joke",
-            font=("Consolas", 12, "bold"),
-            fg="black",
-            bg="#00FF00",
-            width=18,
+            image=self.joke_btn_img,
+            borderwidth=0,
+            bg="black",
+            activebackground="black",
             command=self.handle_joke_button
         )
         self.joke_btn.grid(row=0, column=0, padx=20)
 
-        # RIGHT SIDE — punchline button
+        # punchline button
         punch_btn = tk.Button(
             btn_frame,
-            text="Show Punchline",
-            font=("Consolas", 12, "bold"),
-            fg="black",
-            bg="#00FF00",
-            width=18,
+            image=self.punch_btn_img,
+            borderwidth=0,
+            bg="black",
+            activebackground="black",
             command=self.display_punchline
         )
         punch_btn.grid(row=0, column=1, padx=20)
