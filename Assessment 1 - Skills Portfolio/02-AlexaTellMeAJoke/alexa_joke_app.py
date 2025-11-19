@@ -34,7 +34,7 @@ class JokeMatrix:
     def __init__(self, root):
         self.root = root
         self.root.title("Joke Terminal v1.0")
-        self.root.geometry("550x500")
+        self.root.geometry("500x500")
         self.root.config(bg="black")
 
         # store jokes
@@ -84,18 +84,18 @@ class JokeMatrix:
         self.bg.place(x=0, y=0, relwidth=1, relheight=1)
 
         # center-bottom launch button
-        btn_img_path = os.path.join(os.path.dirname(__file__), "enter_btn.png")
-        self.enter_btn_img = tk.PhotoImage(file=btn_img_path)
+        btn_img_path = os.path.join(os.path.dirname(__file__), "initiate_btn.png")
+        self.initiate_btn_img = tk.PhotoImage(file=btn_img_path).subsample(2,2)
 
-        launch_btn = tk.Button(
+        initiate_btn = tk.Button(
             self.root,
-            image=self.enter_btn_img,
+            image=self.initiate_btn_img,
             borderwidth=0,
             bg="black",
             activebackground="black",
             command=self.terminal_screen
         )
-        launch_btn.place(relx=0.5, rely=0.88, anchor="center")
+        initiate_btn.place(relx=0.5, rely=0.88, anchor="center")
 
   
     # PAGE 2: TERMINAL SCREEN UI
@@ -110,70 +110,65 @@ class JokeMatrix:
         # reset joke button state
         self.first_time = True
 
-        # Top hacker header
-        tk.Label(
-            self.root,
-            text=">>> HACKER JOKE TERMINAL ONLINE",
-            font=("Consolas", 16, "bold"),
-            fg="#00FF00",
-            bg="black"
-        ).pack(pady=10)
-
         # system menu button (☰)
         sys_btn = tk.Button(
             self.root,
             text="☰",
-            font=("Consolas", 14, "bold"),
+            font=("Consolas", 12, "bold"),
             fg="black",
-            bg="#00FF00",
+            bg="#00E5FF",
             command=self.system_menu
         )
-        sys_btn.place(x=10, y=10)
+        sys_btn.place(x=460, y=10)
 
-        # central terminal label
+        # Boot-up terminal lines (cyan hacker style)
+        boot_lines = (
+            "<< INITIALIZING ALEXA HUMOR CORE >>\n"
+            "<< LOADING JOKE RETRIEVAL MATRIX >>\n"
+            "<< VERIFYING LAUGHTER SUBSYSTEM >>\n"
+            "<< STATUS: ONLINE >>"
+        )
+
         self.terminal_display = tk.Label(
             self.root,
-            text="Press 'Alexa tell me a Joke' to begin...",
-            font=("Consolas", 14),
-            fg="#00FF00",
+            text=boot_lines,
+            font=("Consolas", 13),
+            fg="#00E5FF",        # cyan-blue text
             bg="black",
-            wraplength=600,
-            justify="left"
+            justify="left",
+            wraplength=600
         )
-        self.terminal_display.pack(pady=60)
+        self.terminal_display.place(relx=0.14, rely=0.40)
 
-        # button section (bottom)
-        btn_frame = tk.Frame(self.root, bg="black")
-        btn_frame.pack(side="bottom", pady=30)
 
         # LOAD button images
-        joke_btn_img_path = os.path.join(os.path.dirname(__file__), "joke_btn.png")
-        punch_btn_img_path = os.path.join(os.path.dirname(__file__), "punch_btn.png")
+        joke_btn_img_path = os.path.join(os.path.dirname(__file__), "initiate_btn.png")
+        punch_btn_img_path = os.path.join(os.path.dirname(__file__), "initiate_btn.png")
 
-        self.joke_btn_img = tk.PhotoImage(file=joke_btn_img_path)
-        self.punch_btn_img = tk.PhotoImage(file=punch_btn_img_path)
+        self.joke_btn_img = tk.PhotoImage(file=joke_btn_img_path).subsample(3,3)
+        self.punch_btn_img = tk.PhotoImage(file=punch_btn_img_path).subsample(3,3)
 
         # joke button
         self.joke_btn = tk.Button(
-            btn_frame,
+            self.root,
             image=self.joke_btn_img,
             borderwidth=0,
             bg="black",
             activebackground="black",
             command=self.handle_joke_button
         )
-        self.joke_btn.grid(row=0, column=0, padx=20)
+        self.joke_btn.place(x=96, y=350)
 
         # punchline button
         punch_btn = tk.Button(
-            btn_frame,
+            self.root,
             image=self.punch_btn_img,
             borderwidth=0,
             bg="black",
             activebackground="black",
             command=self.display_punchline
         )
-        punch_btn.grid(row=0, column=1, padx=20)
+        punch_btn.place(x=293, y=350) 
 
 
     # JOKE HANDLING FUNCTIONS
@@ -181,21 +176,28 @@ class JokeMatrix:
         """Controls the button changing: first time -> next joke."""
         self.display_setup()
 
-        # After first click, change text
+        # On first joke click, remove boot-up look (remove cyan, go green)
         if self.first_time:
             self.joke_btn.config(text="Next Joke")
             self.first_time = False
 
+
     def display_setup(self):
         """Pick a random joke and show its setup text."""
         self.current_setup, self.current_punchline = random.choice(self.jokes)
-        self.terminal_display.config(text=self.current_setup)
+        self.terminal_display.config(
+            text=f"<< JOKE RETRIEVED >>\n\n{self.current_setup}",
+            fg="#00E5FF"      # green hacker text
+        )
+
 
     def display_punchline(self):
         """Display punchline of the current joke."""
         self.terminal_display.config(
-            text=f"{self.current_setup}\n\n> {self.current_punchline}"
+            text=f"{self.current_setup}\n\n> {self.current_punchline}",
+            fg="#00E5FF"
         )
+
 
     # SYSTEM MENU POPUP
     def system_menu(self):
@@ -208,7 +210,7 @@ class JokeMatrix:
             menu,
             text="SYSTEM OPTIONS",
             font=("Consolas", 12, "bold"),
-            fg="#00FF00",
+            fg="#00E5FF",
             bg="black"
         ).pack(pady=10)
 
@@ -217,8 +219,8 @@ class JokeMatrix:
             text="Restart",
             font=("Consolas", 11, "bold"),
             fg="black",
-            bg="#00FF00",
-            width=14,
+            bg="#00E5FF",
+            width=14, 
             command=lambda: [menu.destroy(), self.splash_screen()]
         ).pack(pady=8)
 
@@ -227,7 +229,7 @@ class JokeMatrix:
             text="Quit",
             font=("Consolas", 11, "bold"),
             fg="black",
-            bg="#00FF00",
+            bg="#00E5FF",
             width=14,
             command=self.root.quit
         ).pack(pady=5)
