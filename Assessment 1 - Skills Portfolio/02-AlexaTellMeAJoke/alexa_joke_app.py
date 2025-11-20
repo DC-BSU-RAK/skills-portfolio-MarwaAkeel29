@@ -39,6 +39,11 @@ class JokeMatrix:
         self.root.config(bg="black")
         pygame.mixer.init()
 
+
+        # PLAY STARTUP SOUND 
+        startup_sound_path = os.path.join(os.path.dirname(__file__), "sounds", "witch.mp3")
+        pygame.mixer.Sound(startup_sound_path).play()
+
         # load button click sound
         sound_path = os.path.join(os.path.dirname(__file__), "sounds", "click.mp3")
         self.btn_sound = pygame.mixer.Sound(sound_path)
@@ -50,7 +55,6 @@ class JokeMatrix:
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh4.mp3")),
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh5.mp3")),
         ]
-
 
         # store jokes
         self.jokes = []
