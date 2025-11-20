@@ -79,12 +79,12 @@ class JokeMatrix:
         self.first_time = True
 
         # animated background gif
-        gif_path = os.path.join(os.path.dirname(__file__), "hacker_bg.gif")
+        gif_path = os.path.join(os.path.dirname(__file__), "backgrounds", "hacker_bg.gif")
         self.bg = AnimatedGIF(self.root, gif_path)
         self.bg.place(x=0, y=0, relwidth=1, relheight=1)
 
         # center-bottom launch button
-        btn_img_path = os.path.join(os.path.dirname(__file__), "initiate_btn.png")
+        btn_img_path = os.path.join(os.path.dirname(__file__), "buttons", "initiate_btn.png")
         self.initiate_btn_img = tk.PhotoImage(file=btn_img_path).subsample(2,2)
 
         initiate_btn = tk.Button(
@@ -103,7 +103,7 @@ class JokeMatrix:
         self.wipe()
 
         # animated background gif for second page
-        gif_path = os.path.join(os.path.dirname(__file__), "terminal_bg.gif")
+        gif_path = os.path.join(os.path.dirname(__file__), "backgrounds", "terminal_bg.gif")
         self.bg2 = AnimatedGIF(self.root, gif_path)
         self.bg2.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -133,7 +133,7 @@ class JokeMatrix:
             self.root,
             text=boot_lines,
             font=("Consolas", 13),
-            fg="#00E5FF",        # cyan-blue text
+            fg="#00E5FF",        
             bg="black",
             justify="left",
             wraplength=600
@@ -142,25 +142,39 @@ class JokeMatrix:
 
 
         # LOAD button images
-        joke_btn_img_path = os.path.join(os.path.dirname(__file__), "initiate_btn.png")
-        punch_btn_img_path = os.path.join(os.path.dirname(__file__), "initiate_btn.png")
+        joke1_first_img_path = os.path.join(os.path.dirname(__file__), "buttons", "joke_first.png")
+        joke2_btn_img_path   = os.path.join(os.path.dirname(__file__), "buttons", "joke_second.png")
+        punch_btn_img_path   = os.path.join(os.path.dirname(__file__), "buttons", "punch_btn.png")
 
-        self.joke_btn_img = tk.PhotoImage(file=joke_btn_img_path).subsample(3,3)
+        self.joke_first_img = tk.PhotoImage(file=joke1_first_img_path).subsample(4,4)
+        self.joke_second_img = tk.PhotoImage(file=joke2_btn_img_path).subsample(3,3)
         self.punch_btn_img = tk.PhotoImage(file=punch_btn_img_path).subsample(3,3)
 
-        # joke button
-        self.joke_btn = tk.Button(
+
+        # --- FIRST JOKE BUTTON (appears only once) ---
+        self.joke_btn_first = tk.Button(
             self.root,
-            image=self.joke_btn_img,
+            image=self.joke_first_img,
+            borderwidth=0,
+            bg="black",
+            activebackground="black",
+            command=self.handle_first_joke
+        )
+        self.joke_btn_first.place(x=101, y=354)
+
+        # --- SECOND JOKE BUTTON (hidden initially) ---
+        self.joke_btn_second = tk.Button(
+            self.root,
+            image=self.joke_second_img,
             borderwidth=0,
             bg="black",
             activebackground="black",
             command=self.handle_joke_button
         )
-        self.joke_btn.place(x=96, y=350)
+        self.joke_btn_second.place_forget()     
 
-        # punchline button
-        punch_btn = tk.Button(
+        # --- PUNCHLINE BUTTON ---
+        self.punch_btn = tk.Button(
             self.root,
             image=self.punch_btn_img,
             borderwidth=0,
@@ -168,18 +182,27 @@ class JokeMatrix:
             activebackground="black",
             command=self.display_punchline
         )
-        punch_btn.place(x=293, y=350) 
+        self.punch_btn.place(x=265, y=355)
 
 
     # JOKE HANDLING FUNCTIONS
-    def handle_joke_button(self):
-        """Controls the button changing: first time -> next joke."""
+    def handle_first_joke(self):
+        """Runs only once → fetch joke, then swap to NEXT JOKE button."""
         self.display_setup()
 
-        # On first joke click, remove boot-up look (remove cyan, go green)
-        if self.first_time:
-            self.joke_btn.config(text="Next Joke")
-            self.first_time = False
+        # Hide first joke button    
+        self.joke_btn_first.place_forget()
+
+        # Show second joke button
+        self.joke_btn_second.place(x=90, y=350)
+
+        self.first_time = False
+
+
+
+    def handle_joke_button(self):
+        """Handles NEXT JOKE button only."""
+        self.display_setup()
 
 
     def display_setup(self):
@@ -187,7 +210,9 @@ class JokeMatrix:
         self.current_setup, self.current_punchline = random.choice(self.jokes)
         self.terminal_display.config(
             text=f"<< JOKE RETRIEVED >>\n\n{self.current_setup}",
-            fg="#00E5FF"      # green hacker text
+            fg="#00E5FF",
+            wraplength=360,
+            justify="left"      
         )
 
 
@@ -195,9 +220,10 @@ class JokeMatrix:
         """Display punchline of the current joke."""
         self.terminal_display.config(
             text=f"{self.current_setup}\n\n> {self.current_punchline}",
-            fg="#00E5FF"
+            fg="#00E5FF",
+            wraplength=360,
+            justify='left'
         )
-
 
     # SYSTEM MENU POPUP
     def system_menu(self):
