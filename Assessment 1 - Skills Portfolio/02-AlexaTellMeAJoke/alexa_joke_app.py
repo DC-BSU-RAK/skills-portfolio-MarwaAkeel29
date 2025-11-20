@@ -2,10 +2,11 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk, ImageSequence   
 import random
+import pygame
 import os
 
 
-#     H A C K E R   J O K E   M A C H I N E   (v1.0)
+# H A C K E R   J O K E   M A C H I N E   (v1.0)
 
 
 #created class for gifs  
@@ -36,6 +37,20 @@ class JokeMatrix:
         self.root.title("Joke Terminal v1.0")
         self.root.geometry("500x500")
         self.root.config(bg="black")
+        pygame.mixer.init()
+
+        # load button click sound
+        sound_path = os.path.join(os.path.dirname(__file__), "sounds", "click.mp3")
+        self.btn_sound = pygame.mixer.Sound(sound_path)
+
+        self.laugh_sounds = [
+        pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh1.mp3")),
+        pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh2.mp3")),
+        pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh3.mp3")),
+        pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh4.mp3")),
+        pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh5.mp3")),
+        ]
+
 
         # store jokes
         self.jokes = []
@@ -70,6 +85,12 @@ class JokeMatrix:
         for w in self.root.winfo_children():
             w.destroy()
 
+    def play_click(self):
+        self.btn_sound.play()
+
+    def play_random_laugh(self):
+        random.choice(self.laugh_sounds).play()            
+
 
     # PAGE 1: SPLASH SCREEN
     def splash_screen(self):
@@ -85,7 +106,7 @@ class JokeMatrix:
 
         # center-bottom launch button
         btn_img_path = os.path.join(os.path.dirname(__file__), "buttons", "initiate_btn.png")
-        self.initiate_btn_img = tk.PhotoImage(file=btn_img_path).subsample(2,2)
+        self.initiate_btn_img = tk.PhotoImage(file=btn_img_path).subsample(3,3)
 
         initiate_btn = tk.Button(
             self.root,
@@ -93,11 +114,11 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=self.terminal_screen
+            command=lambda: [self.play_click(), self.terminal_screen()]
         )
         initiate_btn.place(relx=0.5, rely=0.88, anchor="center")
 
-  
+
     # PAGE 2: TERMINAL SCREEN UI
     def terminal_screen(self):
         self.wipe()
@@ -117,9 +138,9 @@ class JokeMatrix:
             font=("Consolas", 12, "bold"),
             fg="black",
             bg="#00E5FF",
-            command=self.system_menu
+            command=lambda:[self.play_click(), self.system_menu()]
         )
-        sys_btn.place(x=460, y=10)
+        sys_btn.place(x=10, y=10)
 
         # Boot-up terminal lines (cyan hacker style)
         boot_lines = (
@@ -158,9 +179,10 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=self.handle_first_joke
+            command=lambda: [self.play_click(), self.handle_first_joke()]
+
         )
-        self.joke_btn_first.place(x=101, y=354)
+        self.joke_btn_first.place(x=103, y=356)
 
         # --- SECOND JOKE BUTTON (hidden initially) ---
         self.joke_btn_second = tk.Button(
@@ -169,7 +191,7 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=self.handle_joke_button
+            command=lambda: [self.play_click(), self.handle_joke_button()]
         )
         self.joke_btn_second.place_forget()     
 
@@ -180,9 +202,9 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=self.display_punchline
+            command=lambda: [self.play_click(), self.play_random_laugh(), self.display_punchline()]
         )
-        self.punch_btn.place(x=265, y=355)
+        self.punch_btn.place(x=265, y=357)
 
 
     # JOKE HANDLING FUNCTIONS
@@ -194,7 +216,7 @@ class JokeMatrix:
         self.joke_btn_first.place_forget()
 
         # Show second joke button
-        self.joke_btn_second.place(x=90, y=350)
+        self.joke_btn_second.place(x=93, y=360)
 
         self.first_time = False
 
@@ -214,7 +236,6 @@ class JokeMatrix:
             wraplength=360,
             justify="left"      
         )
-
 
     def display_punchline(self):
         """Display punchline of the current joke."""
@@ -247,7 +268,7 @@ class JokeMatrix:
             fg="black",
             bg="#00E5FF",
             width=14, 
-            command=lambda: [menu.destroy(), self.splash_screen()]
+            command=lambda:[self.play_click(), menu.destroy(), self.splash_screen()]
         ).pack(pady=8)
 
         tk.Button(
@@ -257,7 +278,7 @@ class JokeMatrix:
             fg="black",
             bg="#00E5FF",
             width=14,
-            command=self.root.quit
+            command=lambda: [self.play_click(), self.root.quit()]
         ).pack(pady=5)
 
 
