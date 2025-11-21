@@ -42,7 +42,8 @@ class JokeMatrix:
 
         # PLAY STARTUP SOUND 
         startup_sound_path = os.path.join(os.path.dirname(__file__), "sounds", "witch.mp3")
-        pygame.mixer.Sound(startup_sound_path).play()
+        # delay startup sound by 4 seconds
+        self.root.after(2000, lambda: pygame.mixer.Sound(startup_sound_path).play())
 
         # load button click sound
         sound_path = os.path.join(os.path.dirname(__file__), "sounds", "click.mp3")
@@ -118,7 +119,7 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=lambda: [self.play_click(), self.terminal_screen()]
+            command=lambda: [pygame.mixer.stop(), self.play_click(), self.terminal_screen()]
         )
         initiate_btn.place(relx=0.5, rely=0.88, anchor="center")
 
@@ -206,6 +207,11 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
+            command=lambda: [
+            self.play_click(),
+            self.display_punchline(),   
+            self.root.after(1000, self.play_random_laugh)  
+        ]
         )
         self.punch_btn.place(x=265, y=357)
 
