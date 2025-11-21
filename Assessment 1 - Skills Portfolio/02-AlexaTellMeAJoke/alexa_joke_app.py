@@ -206,7 +206,6 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=lambda: [self.play_click(), self.play_random_laugh(), self.display_punchline()]
         )
         self.punch_btn.place(x=265, y=357)
 
