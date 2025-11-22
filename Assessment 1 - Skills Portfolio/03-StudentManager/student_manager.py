@@ -1,40 +1,89 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from PIL import Image, ImageTk
 import os
 
-class StudentManager:
+class StudentManagerGUI:
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Student Records Manager")
-        self.root.geometry("850x500")
-        self.root.config(bg="#0B0C10")
+        self.root.title("Student Work Management")
+        self.root.geometry("850x550")
+        self.root.resizable(False, False)
 
-        # Path to student file
+        #LOAD BACKGROUND IMAGE 
+        bg_path = os.path.join(os.path.dirname(__file__), "background", "bg.png")
+        self.bg_img = ImageTk.PhotoImage(Image.open(bg_path))
+        bg_label = tk.Label(self.root, image=self.bg_img)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        #LOAD STUDENT FILE
         self.student_file = os.path.join(os.path.dirname(__file__), "studentMarks.txt")
-        self.students = self.load_students()  # Load student data
+        self.students = self.load_students()
 
-        self.create_sidebar()  # Create left sidebar buttons
+        #SIDEBAR BUTTONs
+        self.btn_dir = os.path.join(os.path.dirname(__file__), "buttons")
+        self.create_sidebar_buttons()
 
-        # Notebook for tabs
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.place(x=160, y=20, width=670, height=450)
+        #MAIN RECORDS FRAME
+        self.records_frame = tk.Frame(self.root, bg="#0F1A24")
+        self.records_frame.place(x=230, y=180, width=600, height=310)
 
-        # Tabs
-        self.all_tab = tk.Frame(self.notebook, bg="#1F2833")
-        self.individual_tab = tk.Frame(self.notebook, bg="#1F2833")
-        self.highest_tab = tk.Frame(self.notebook, bg="#1F2833")
-        self.lowest_tab = tk.Frame(self.notebook, bg="#1F2833")
 
-        self.notebook.add(self.all_tab, text="All Students")
-        self.notebook.add(self.individual_tab, text="Individual Student")
-        self.notebook.add(self.highest_tab, text="Highest Mark")
-        self.notebook.add(self.lowest_tab, text="Lowest Mark")
+    # IMAGE LOADER WITH SUBSAMPLE
+    def load_image(self, folder, name, sub=None):
+        path = os.path.join(folder, name)
+        img = tk.PhotoImage(file=path)
+        if sub:
+            img = img.subsample(*sub)
+        return img
+    
+    
+    # SIDEBAR BUTTONS 
+    def create_sidebar_buttons(self):
 
-    # Load student data from file
+        #VIEW ALL RECORD BUTTON
+        self.btn_all_img = self.load_image(self.btn_dir, "all_btn.png", (2, 2))
+       
+        self.btn_all = tk.Button(self.root, image=self.btn_all_img, command=self.show_all_students,
+                                 borderwidth=0, bg="#11676a", activebackground="black")
+        self.btn_all.image = self.btn_all_img
+        self.btn_all.place(x=10, y=112)
+
+
+        #INDIVIDUAL RECORD BUTTON
+        self.btn_ind_img = self.load_image(self.btn_dir, "individual_btn.png", (2, 2))
+
+        self.btn_ind = tk.Button(
+            self.root, image=self.btn_ind_img,
+            command=self.show_individual_screen,
+            borderwidth=0, bg="#11676a", activebackground="black"
+        )
+        self.btn_ind.image = self.btn_ind_img
+        self.btn_ind.place(x=10, y=175)
+
+
+        # SCORES BUTTON
+        self.btn_scores_img = self.load_image(self.btn_dir, "scores_btn.png", (2, 2))
+
+        self.btn_scores = tk.Button(
+            self.root,
+            image=self.btn_scores_img,
+            command=self.show_scores_screen,   
+            borderwidth=0,
+            bg="#11676a",
+            activebackground="black"
+        )
+        self.btn_scores.image = self.btn_scores_img
+        self.btn_scores.place(x=10, y=235)
+        
+
+       
+    # LOADING STUDENTS FROM TEXT FILE
     def load_students(self):
         students = []
         if not os.path.exists(self.student_file):
-            messagebox.showerror("Error", f"No file found: {self.student_file}")
+            messagebox.showerror("Error", "studentMarks.txt not found!")
             return students
 
         with open(self.student_file, "r") as f:
@@ -42,113 +91,222 @@ class StudentManager:
                 parts = line.strip().split(",")
                 if len(parts) != 6:
                     continue
-                number, name, cw1, cw2, cw3, exam = parts
+
+                num, name, c1, c2, c3, exam = parts
                 try:
-                    cw_total = float(cw1) + float(cw2) + float(cw3)
-                    exam = float(exam)
+                    cw_total = int(c1) + int(c2) + int(c3)
+                    exam = int(exam)
                     total = cw_total + exam
-                    pct = total / 160 * 100
+                    percent = total / 160 * 100
+
                     students.append({
+                        "number": num,
                         "name": name,
-                        "number": number,
                         "coursework": cw_total,
                         "exam": exam,
                         "total": total,
-                        "percentage": pct,
-                        "grade": self.calculate_grade(pct)
+                        "percent": percent,
+                        "grade": self.calc_grade(percent)
                     })
-                except ValueError:
+                except:
                     continue
+
         return students
 
-    # Calculate grade from percentage
-    def calculate_grade(self, pct):
-        if pct >= 70: return "A"
-        if pct >= 60: return "B"
-        if pct >= 50: return "C"
-        if pct >= 40: return "D"
+    def calc_grade(self, p):
+        if p >= 70: return "A"
+        if p >= 60: return "B"
+        if p >= 50: return "C"
+        if p >= 40: return "D"
         return "F"
 
-    # Sidebar buttons
-    def create_sidebar(self):
-        sidebar = tk.Frame(self.root, bg="#1C1C1C")
-        sidebar.place(x=0, y=0, width=160, height=500)
-        tk.Button(sidebar, text="All Students", width=18, command=self.show_all_students).pack(pady=10)
-        tk.Button(sidebar, text="Individual", width=18, command=self.show_individual).pack(pady=10)
-        tk.Button(sidebar, text="Highest", width=18, command=self.show_highest).pack(pady=10)
-        tk.Button(sidebar, text="Lowest", width=18, command=self.show_lowest).pack(pady=10)
 
-    # Create a table in a tab with given data
-    def create_table(self, parent, data):
-        for w in parent.winfo_children():
+    # TREEVIEW TABLE DISPLAY
+    def show_table(self, dataset):
+        # Clear old widgets 
+        for w in self.records_frame.winfo_children():
             w.destroy()
-        columns = ("Number", "Name", "Coursework", "Exam", "Total", "Percentage", "Grade")
-        tree = ttk.Treeview(parent, columns=columns, show="headings")
-        tree.pack(fill="both", expand=True)
-        for col in columns:
+
+        # Table columns names
+        columns = ("Number", "Name", "CW", "Exam", "Total", "Percent", "Grade")
+
+        # Created TreeView (used this idea from minerva linkedin course)
+        tree = ttk.Treeview(
+            self.records_frame,
+            columns=columns,
+            show="headings",
+            selectmode="browse"
+        )
+
+        # created a custom Style
+        style = ttk.Style()
+        style.configure(
+            "Treeview",
+            rowheight=28,
+            background="#0F1A24",
+            fieldbackground="#0F1A24",
+            foreground="white",
+            borderwidth=0
+        )
+        style.configure("Treeview.Heading",
+                        font=("Consolas", 10, "bold"),
+                        foreground="black")
+
+        tree.pack(side="left", fill="both", expand=True)
+
+        # Attached scrollbar 
+        scroll = ttk.Scrollbar(self.records_frame, orient="vertical", command=tree.yview)
+        scroll.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scroll.set)
+
+        # Column widths for the rectangle in bg image
+        widths = [80, 150, 70, 70, 80, 90, 70]
+
+        for (col, w) in zip(columns, widths):
             tree.heading(col, text=col)
-            tree.column(col, anchor="center")
-        for s in data:
-            tree.insert("", "end", values=(s['number'], s['name'], s['coursework'], s['exam'],
-                                           s['total'], f"{s['percentage']:.2f}%", s['grade']))
-        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=tree.yview)
-        tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
+            tree.column(col, width=w, anchor="center")
 
-    # Show all students
-    def show_all_students(self):
-        self.notebook.select(self.all_tab)
-        if not self.students:
-            for w in self.all_tab.winfo_children():
-                w.destroy()
-            tk.Label(self.all_tab, text="No students found.", fg="white", bg="#1F2833").pack(pady=20)
-            return
-        self.create_table(self.all_tab, self.students)
+        # Insert rows
+        for s in dataset:
+            tree.insert("", "end",
+                        values=(s["number"], s["name"], s["coursework"], s["exam"],
+                                s["total"], f"{s['percent']:.1f}%", s["grade"]))
+            
 
-    # Show individual student search
-    def show_individual(self):
-        self.notebook.select(self.individual_tab)
-        for w in self.individual_tab.winfo_children():
+    #Individual record section
+    def show_individual_screen(self):
+        # clear old contents in record area
+        for w in self.records_frame.winfo_children():
             w.destroy()
-        tk.Label(self.individual_tab, text="Enter Student Name or Number:", bg="#1F2833", fg="#66FCF1").pack(pady=10)
-        entry = tk.Entry(self.individual_tab)
-        entry.pack(pady=5)
-        result_frame = tk.Frame(self.individual_tab, bg="#1F2833")
-        result_frame.pack(fill="both", expand=True, pady=10)
 
+        form = tk.Frame(self.records_frame, bg="#0F1A24")
+        form.pack(fill="both", expand=True)
+
+
+        # Label
+        tk.Label(
+            form, text="Search Individual Student",
+            font=("Consolas", 14, "bold"), fg="white",
+            bg="#0F1A24"
+        ).pack(pady=15)
+
+        # Entry box
+        entry = tk.Entry(form, font=("Consolas", 12), width=25)
+        entry.pack(pady=15)
+
+        # Search button
         def search():
-            val = entry.get().strip()
-            filtered = [s for s in self.students if s['name'] == val or s['number'] == val]
-            if not filtered:
-                for w in result_frame.winfo_children():
-                    w.destroy()
-                tk.Label(result_frame, text="Student not found!", fg="white", bg="#1F2833").pack(pady=20)
+            query = entry.get().strip()
+
+            if not query:
+                messagebox.showwarning("Input Missing", "Enter a name or student number!")
                 return
-            self.create_table(result_frame, filtered)
 
-        tk.Button(self.individual_tab, text="Search", command=search).pack(pady=5)
+            result = [
+                s for s in self.students 
+                if s["number"] == query or s["name"].lower() == query.lower()
+            ]
 
-    # Show student with highest percentage
+            if not result:
+                messagebox.showerror("Not Found", "No matching student found.")
+                return
+            
+            # show only that student in table
+            self.show_table(result)
+
+        tk.Button(
+            form,
+            text="Search",
+            font=("Consolas", 12, "bold"),
+            command=search,
+            bg="#1A2A35", fg="white",
+            width=12
+        ).pack(pady=15)
+
+    
+    #Score section (this includes Highest and lowest)
+    def show_scores_screen(self):
+        # clear old content
+        for w in self.records_frame.winfo_children():
+            w.destroy()
+
+        frame = tk.Frame(self.records_frame, bg="#0F1A24")
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # find highest + lowest
+        highest = max(self.students, key=lambda s: s["total"])
+        lowest  = min(self.students, key=lambda s: s["total"])
+
+
+        # Card creator function (records will be displayed as a card)
+        def create_card(parent, title, student, color):
+            card = tk.Frame(parent, bg="#1A2A35", padx=15, pady=15)
+            card.pack(pady=10, fill="x")
+
+            tk.Label(
+                card,
+                text=title,
+                font=("Consolas", 16, "bold"),
+                fg=color,
+                bg="#1A2A35"
+            ).pack(anchor="w")
+
+            text = (
+                f"Name: {student['name']}\n"
+                f"Number: {student['number']}\n"
+                f"Coursework Total: {student['coursework']}\n"
+                f"Exam Marks: {student['exam']}\n"
+                f"Overall Total: {student['total']}\n"
+                f"Percentage: {student['percent']:.1f}%\n"
+                f"Grade: {student['grade']}"
+            )
+
+            tk.Label(
+                card,
+                text=text,
+                font=("Consolas", 12),
+                fg="white",
+                bg="#1A2A35",
+                justify="left"
+            ).pack(anchor="w")
+
+        # Created highest & lowest cards
+        create_card(
+            frame,
+            "Highest Scoring Student",
+            highest,
+            "#66FF7F"    
+        )
+
+        create_card(
+            frame,
+            "Lowest Scoring Student",
+            lowest,
+            "#FF6B6B"    
+        )
+
+
+    # BUTTON ACTIONS
+    def show_all_students(self):
+        self.show_table(self.students)
+
+    def search_student_window(self):
+        messagebox.showinfo("Search", "Individual search screen coming next")
+
     def show_highest(self):
-        self.notebook.select(self.highest_tab)
-        if not self.students:
-            for w in self.highest_tab.winfo_children():
-                w.destroy()
-            tk.Label(self.highest_tab, text="No students found.", fg="white", bg="#1F2833").pack(pady=20)
-            return
-        self.create_table(self.highest_tab, [max(self.students, key=lambda x: x['percentage'])])
+        if self.students:
+            top = max(self.students, key=lambda s: s["percent"])
+            self.show_table([top])
 
-    # Show student with lowest percentage
     def show_lowest(self):
-        self.notebook.select(self.lowest_tab)
-        if not self.students:
-            for w in self.lowest_tab.winfo_children():
-                w.destroy()
-            tk.Label(self.lowest_tab, text="No students found.", fg="white", bg="#1F2833").pack(pady=20)
-            return
-        self.create_table(self.lowest_tab, [min(self.students, key=lambda x: x['percentage'])])
+        if self.students:
+            low = min(self.students, key=lambda s: s["percent"])
+            self.show_table([low])
 
+
+
+# RUN APP
 if __name__ == "__main__":
     root = tk.Tk()
-    StudentManager(root)
+    StudentManagerGUI(root)
     root.mainloop()
