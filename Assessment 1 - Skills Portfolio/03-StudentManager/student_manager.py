@@ -27,7 +27,7 @@ class StudentManagerGUI:
 
         #MAIN RECORDS FRAME
         self.records_frame = tk.Frame(self.root, bg="#0F1A24")
-        self.records_frame.place(x=230, y=180, width=600, height=310)
+        self.records_frame.place(x=230, y=182, width=600, height=310)
 
 
     # IMAGE LOADER WITH SUBSAMPLE
@@ -45,22 +45,30 @@ class StudentManagerGUI:
         #VIEW ALL RECORD BUTTON
         self.btn_all_img = self.load_image(self.btn_dir, "all_btn.png", (2, 2))
        
-        self.btn_all = tk.Button(self.root, image=self.btn_all_img, command=self.show_all_students,
-                                 borderwidth=0, bg="#11676a", activebackground="black")
+        self.btn_all = tk.Button(
+            self.root, 
+            image=self.btn_all_img, 
+            command=self.show_all_students,
+            borderwidth=0, 
+            bg="#0F1A24", 
+            activebackground="black")
         self.btn_all.image = self.btn_all_img
-        self.btn_all.place(x=10, y=112)
+        self.btn_all.place(x=10, y=119)
 
 
         #INDIVIDUAL RECORD BUTTON
         self.btn_ind_img = self.load_image(self.btn_dir, "individual_btn.png", (2, 2))
 
         self.btn_ind = tk.Button(
-            self.root, image=self.btn_ind_img,
+            self.root, 
+            image=self.btn_ind_img,
             command=self.show_individual_screen,
-            borderwidth=0, bg="#11676a", activebackground="black"
+            borderwidth=0, 
+            bg="#0F1A24", 
+            activebackground="black"
         )
         self.btn_ind.image = self.btn_ind_img
-        self.btn_ind.place(x=10, y=175)
+        self.btn_ind.place(x=10, y=178)
 
 
         # SCORES BUTTON
@@ -71,11 +79,11 @@ class StudentManagerGUI:
             image=self.btn_scores_img,
             command=self.show_scores_screen,   
             borderwidth=0,
-            bg="#11676a",
+            bg="#0F1A24",
             activebackground="black"
         )
         self.btn_scores.image = self.btn_scores_img
-        self.btn_scores.place(x=10, y=235)
+        self.btn_scores.place(x=10, y=236)
         
 
        
@@ -194,7 +202,7 @@ class StudentManagerGUI:
         entry = tk.Entry(form, font=("Consolas", 12), width=25)
         entry.pack(pady=15)
 
-        # Search button
+        # Search button to filter specific student
         def search():
             query = entry.get().strip()
 
@@ -226,83 +234,65 @@ class StudentManagerGUI:
     
     #Score section (this includes Highest and lowest)
     def show_scores_screen(self):
-        # clear old content
+        # Clear old content
         for w in self.records_frame.winfo_children():
             w.destroy()
 
-        frame = tk.Frame(self.records_frame, bg="#0F1A24")
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        # Frame to hold cards
+        cards_frame = tk.Frame(self.records_frame, bg="#0F1A24")
+        cards_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # find highest + lowest
+        # Configure 2 equal columns
+        cards_frame.grid_columnconfigure(0, weight=1)
+        cards_frame.grid_columnconfigure(1, weight=1)
+
+        # Find highest + lowest
         highest = max(self.students, key=lambda s: s["total"])
         lowest  = min(self.students, key=lambda s: s["total"])
 
+        # created a Card creator function 
+        def create_card(parent, title, student, color, column):
+            card = tk.Frame(parent, bg="#1A2A35", padx=10, pady=10)
+            card.grid(row=0, column=column, sticky="nsew", padx=5, pady=5)
 
-        # Card creator function (records will be displayed as a card)
-        def create_card(parent, title, student, color):
-            card = tk.Frame(parent, bg="#1A2A35", padx=15, pady=15)
-            card.pack(pady=10, fill="x")
+            # Made card expand to fill vertical space
+            parent.grid_rowconfigure(0, weight=1)
 
             tk.Label(
                 card,
                 text=title,
-                font=("Consolas", 16, "bold"),
+                font=("Consolas", 14, "bold"),
                 fg=color,
                 bg="#1A2A35"
-            ).pack(anchor="w")
+            ).pack(anchor="w", pady=(0,10))
 
             text = (
-                f"Name: {student['name']}\n"
-                f"Number: {student['number']}\n"
-                f"Coursework Total: {student['coursework']}\n"
-                f"Exam Marks: {student['exam']}\n"
-                f"Overall Total: {student['total']}\n"
-                f"Percentage: {student['percent']:.1f}%\n"
+                f"Name: {student['name']}\n\n"
+                f"Number: {student['number']}\n\n"
+                f"Coursework Total: {student['coursework']}\n\n"
+                f"Exam Marks: {student['exam']}\n\n"
+                f"Overall Total: {student['total']}\n\n"
+                f"Percentage: {student['percent']:.1f}%\n\n"
                 f"Grade: {student['grade']}"
             )
 
             tk.Label(
                 card,
                 text=text,
-                font=("Consolas", 12),
+                font=("Consolas", 11),
                 fg="white",
                 bg="#1A2A35",
                 justify="left"
             ).pack(anchor="w")
 
-        # Created highest & lowest cards
-        create_card(
-            frame,
-            "Highest Scoring Student",
-            highest,
-            "#66FF7F"    
-        )
-
-        create_card(
-            frame,
-            "Lowest Scoring Student",
-            lowest,
-            "#FF6B6B"    
-        )
+        # Create cards side by side so it appears clean
+        create_card(cards_frame, "Highest Scoring Student", highest, "#66FF7F", column=0)
+        create_card(cards_frame, "Lowest Scoring Student", lowest, "#FF6B6B", column=1)
 
 
-    # BUTTON ACTIONS
+    # view all function linked to button
     def show_all_students(self):
         self.show_table(self.students)
-
-    def search_student_window(self):
-        messagebox.showinfo("Search", "Individual search screen coming next")
-
-    def show_highest(self):
-        if self.students:
-            top = max(self.students, key=lambda s: s["percent"])
-            self.show_table([top])
-
-    def show_lowest(self):
-        if self.students:
-            low = min(self.students, key=lambda s: s["percent"])
-            self.show_table([low])
-
 
 
 # RUN APP
