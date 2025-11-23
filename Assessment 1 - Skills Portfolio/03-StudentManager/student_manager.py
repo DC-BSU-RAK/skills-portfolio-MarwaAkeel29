@@ -8,7 +8,7 @@ class StudentManagerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Student Work Management")
-        self.root.geometry("850x550")
+        self.root.geometry("850x600")
         self.root.resizable(False, False)
 
         #LOAD BACKGROUND IMAGE 
@@ -27,8 +27,24 @@ class StudentManagerGUI:
 
         #MAIN RECORDS FRAME
         self.records_frame = tk.Frame(self.root, bg="#0F1A24")
-        self.records_frame.place(x=230, y=182, width=600, height=310)
+        self.records_frame.place(x=230, y=230, width=600, height=310)
 
+        # SEARCH BAR
+        self.search_var = tk.StringVar()
+        self.search_var.trace("w", self.run_search)  # Live search
+
+        self.search_entry = tk.Entry(
+            self.root,
+            textvariable=self.search_var,
+            font=("Consolas", 12),
+            bd=0,
+            bg="white"
+        )
+        self.search_entry.place(x=325, y=180, width=187, height=25)
+
+        #SUMMARY FRAME 
+        self.summary_frame = tk.Frame(self.root, bg="#0F1A24")
+        self.summary_frame.place(x=230, y=543, width=600, height=40)
 
     # IMAGE LOADER WITH SUBSAMPLE
     def load_image(self, folder, name, sub=None):
@@ -53,23 +69,7 @@ class StudentManagerGUI:
             bg="#0F1A24", 
             activebackground="black")
         self.btn_all.image = self.btn_all_img
-        self.btn_all.place(x=10, y=119)
-
-
-        #INDIVIDUAL RECORD BUTTON
-        self.btn_ind_img = self.load_image(self.btn_dir, "individual_btn.png", (2, 2))
-
-        self.btn_ind = tk.Button(
-            self.root, 
-            image=self.btn_ind_img,
-            command=self.show_individual_screen,
-            borderwidth=0, 
-            bg="#0F1A24", 
-            activebackground="black"
-        )
-        self.btn_ind.image = self.btn_ind_img
-        self.btn_ind.place(x=10, y=178)
-
+        self.btn_all.place(x=10, y=138)
 
         # SCORES BUTTON
         self.btn_scores_img = self.load_image(self.btn_dir, "scores_btn.png", (2, 2))
@@ -83,10 +83,22 @@ class StudentManagerGUI:
             activebackground="black"
         )
         self.btn_scores.image = self.btn_scores_img
-        self.btn_scores.place(x=10, y=236)
-        
+        self.btn_scores.place(x=0, y=195)
 
-       
+        # SORT BUTTON IMAGE
+        self.sort_btn_img = self.load_image(self.btn_dir, "sort_btn.png", (8, 8))
+
+        self.sort_button = tk.Button(
+            self.root,
+            image=self.sort_btn_img,
+            command=self.open_sort_menu,
+            borderwidth=0,
+            bg="#0F1A24",
+            activebackground="#0F1A24"
+        )
+        self.sort_button.image = self.sort_btn_img
+        self.sort_button.place(x=805, y=180)   
+     
     # LOADING STUDENTS FROM TEXT FILE
     def load_students(self):
         students = []
@@ -127,6 +139,64 @@ class StudentManagerGUI:
         if p >= 50: return "C"
         if p >= 40: return "D"
         return "F"
+    
+    #Created Sort Menu with varieties of commands 
+    def open_sort_menu(self):
+        menu = tk.Menu(
+            self.root, 
+            tearoff=0, 
+            bg="#1A2A35", 
+            fg="white",
+            activebackground="#335566", 
+            activeforeground="white",
+            font=("Consolas", 11))
+
+        menu.add_command(label="Name (A → Z)",
+                        command=lambda: self.sort_records("name_asc"))
+        menu.add_command(label="Name (Z → A)", 
+                         command=lambda: self.sort_records("name_desc"))
+        menu.add_separator() #Added a seperator for clean grouped menu displays
+
+        menu.add_command(label="Percentage (Low → High)",
+                         command=lambda: self.sort_records("percent_asc"))
+        menu.add_command(label="Percentage (High → Low)",
+                         command=lambda: self.sort_records("percent_desc"))
+        menu.add_separator()
+
+        menu.add_command(label="Student Number",
+                         command=lambda: self.sort_records("number"))
+        menu.add_command(label="Coursework Marks",
+                         command=lambda: self.sort_records("cw"))
+        menu.add_command(label="Exam Marks",
+                         command=lambda: self.sort_records("exam"))
+        menu.add_command(label="Total Marks",
+                         command=lambda: self.sort_records("total"))
+
+        # popup under the sort button
+        menu.tk_popup(self.sort_button.winfo_rootx(), self.sort_button.winfo_rooty() + 35)
+
+    #Crested sort records function that links to command menu for specific tasks
+    def sort_records(self, mode):
+        data = self.students.copy()
+
+        if mode == "name_asc":
+            data.sort(key=lambda s: s["name"].lower())
+        elif mode == "name_desc":
+            data.sort(key=lambda s: s["name"].lower(), reverse=True)
+        elif mode == "percent_asc":
+            data.sort(key=lambda s: s["percent"])
+        elif mode == "percent_desc":
+            data.sort(key=lambda s: s["percent"], reverse=True)
+        elif mode == "number":
+            data.sort(key=lambda s: int(s["number"]))
+        elif mode == "cw":
+            data.sort(key=lambda s: s["coursework"], reverse=True)
+        elif mode == "exam":
+            data.sort(key=lambda s: s["exam"], reverse=True)
+        elif mode == "total":
+            data.sort(key=lambda s: s["total"], reverse=True)
+
+        self.show_table(data)
 
 
     # TREEVIEW TABLE DISPLAY
@@ -180,57 +250,39 @@ class StudentManagerGUI:
                         values=(s["number"], s["name"], s["coursework"], s["exam"],
                                 s["total"], f"{s['percent']:.1f}%", s["grade"]))
             
-
-    #Individual record section
-    def show_individual_screen(self):
-        # clear old contents in record area
-        for w in self.records_frame.winfo_children():
+    def show_summary(self):
+        # Clear old content
+        for w in self.summary_frame.winfo_children():
             w.destroy()
 
-        form = tk.Frame(self.records_frame, bg="#0F1A24")
-        form.pack(fill="both", expand=True)
+        count = len(self.students)
+        avg = sum(s['percent'] for s in self.students) / count if count else 0
 
+        text = f"Total Students: {count}   |   Average Percentage: {avg:.2f}%"
 
-        # Label
         tk.Label(
-            form, text="Search Individual Student",
-            font=("Consolas", 14, "bold"), fg="white",
-            bg="#0F1A24"
-        ).pack(pady=15)
+            self.summary_frame,
+            text=text,
+            font=("Consolas", 11, "bold"),
+            bg="#0F1A24",
+            fg="#F2F8FA"
+        ).pack(anchor="w", padx=11)
 
-        # Entry box
-        entry = tk.Entry(form, font=("Consolas", 12), width=25)
-        entry.pack(pady=15)
+    def run_search(self, *args):
+        query = self.search_var.get().strip().lower()
 
-        # Search button to filter specific student
-        def search():
-            query = entry.get().strip()
+        if query == "":
+            # Empty search → show all
+            self.show_table(self.students)
+            return
 
-            if not query:
-                messagebox.showwarning("Input Missing", "Enter a name or student number!")
-                return
+        result = [
+            s for s in self.students
+            if query in s["number"].lower()
+            or query in s["name"].lower()
+        ]
 
-            result = [
-                s for s in self.students 
-                if s["number"] == query or s["name"].lower() == query.lower()
-            ]
-
-            if not result:
-                messagebox.showerror("Not Found", "No matching student found.")
-                return
-            
-            # show only that student in table
-            self.show_table(result)
-
-        tk.Button(
-            form,
-            text="Search",
-            font=("Consolas", 12, "bold"),
-            command=search,
-            bg="#1A2A35", fg="white",
-            width=12
-        ).pack(pady=15)
-
+        self.show_table(result)
     
     #Score section (this includes Highest and lowest)
     def show_scores_screen(self):
@@ -293,6 +345,7 @@ class StudentManagerGUI:
     # view all function linked to button
     def show_all_students(self):
         self.show_table(self.students)
+        self.show_summary() #show the summary frame 
 
 
 # RUN APP
