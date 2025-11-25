@@ -12,10 +12,16 @@ class StudentManagerGUI:
         self.root.resizable(False, False)
 
         #LOAD BACKGROUND IMAGE 
-        bg_path = os.path.join(os.path.dirname(__file__), "background", "bg.png")
-        self.bg_img = ImageTk.PhotoImage(Image.open(bg_path))
-        bg_label = tk.Label(self.root, image=self.bg_img)
-        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_main_path = os.path.join(os.path.dirname(__file__), "background", "bg.png")
+        self.bg_score_path = os.path.join(os.path.dirname(__file__), "background", "bg_score.png")
+
+        # Load both now (prevents garbage-collection)
+        self.bg_main_img = ImageTk.PhotoImage(Image.open(self.bg_main_path))
+        self.bg_score_img = ImageTk.PhotoImage(Image.open(self.bg_score_path))
+
+        # Create ONE background label that we will update later
+        self.bg_label = tk.Label(self.root, image=self.bg_main_img)
+        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         #LOAD STUDENT FILE
         self.student_file = os.path.join(os.path.dirname(__file__), "studentMarks.txt")
@@ -54,6 +60,26 @@ class StudentManagerGUI:
             img = img.subsample(*sub)
         return img
     
+    def set_background(self, mode):
+        if mode == "main":
+            self.bg_label.config(image=self.bg_main_img)
+            self.bg_label.image = self.bg_main_img
+        else:
+            self.bg_label.config(image=self.bg_score_img)
+            self.bg_label.image = self.bg_score_img
+
+    def toggle_main_ui(self, visible=True):
+        """Show or hide main-page widgets: search, sort, summary."""
+        if visible:
+            #all geometry places to be shown only for first page
+            self.search_entry.place(x=325, y=180, width=187, height=25)
+            self.sort_button.place(x=805, y=180)
+            self.summary_frame.place(x=230, y=543, width=600, height=40)
+        else:
+            self.search_entry.place_forget() #used forget function so it does'nt deletes it but removes temporarily
+            self.sort_button.place_forget()
+            self.summary_frame.place_forget()
+            
     
     # SIDEBAR BUTTONS 
     def create_sidebar_buttons(self):
@@ -286,6 +312,10 @@ class StudentManagerGUI:
     
     #Score section (this includes Highest and lowest)
     def show_scores_screen(self):
+
+        self.set_background("score")
+        self.toggle_main_ui(False)     # to HIDE search, sort, summary
+
         # Clear old content
         for w in self.records_frame.winfo_children():
             w.destroy()
@@ -304,7 +334,7 @@ class StudentManagerGUI:
 
         # created a Card creator function 
         def create_card(parent, title, student, color, column):
-            card = tk.Frame(parent, bg="#1A2A35", padx=10, pady=10)
+            card = tk.Frame(parent, bg="#1A2A35", padx=10, pady=12)
             card.grid(row=0, column=column, sticky="nsew", padx=5, pady=5)
 
             # Made card expand to fill vertical space
@@ -344,8 +374,11 @@ class StudentManagerGUI:
 
     # view all function linked to button
     def show_all_students(self):
+        self.set_background("main")
+        self.toggle_main_ui(True)       # to SHOW search, sort, summary again
         self.show_table(self.students)
         self.show_summary() #show the summary frame 
+
 
 
 # RUN APP
