@@ -130,9 +130,6 @@ class StudentManagerGUI:
         self.sort_button.image = self.sort_btn_img
         self.sort_button.place(x=805, y=180)
 
-        #Save button for Add student page
-        self.save_btn_img = self.load_image(self.btn_dir, "save_btn.png", (3, 3))
-
         # EXTENSION MENU BUTTON
         self.btn_ext_img = self.load_image(self.btn_dir, "manage_btn.png", (2, 2))
 
@@ -145,7 +142,17 @@ class StudentManagerGUI:
             activebackground="black"
         )
         self.btn_ext.image = self.btn_ext_img
-        self.btn_ext.place(x=1, y=255)      
+        self.btn_ext.place(x=1, y=255)   
+
+        #Save button for Add student page
+        self.save_btn_img = self.load_image(self.btn_dir, "save_btn.png", (3, 3))
+
+        # UPDATE BUTTON IMAGE
+        self.update_btn_img = self.load_image(self.btn_dir, "update_btn.png", (3, 3))
+
+        # DELETE BUTTON IMAGE
+        self.delete_btn_img = self.load_image(self.btn_dir, "delete_btn.png", (3, 3))
+   
      
     # LOADING STUDENTS FROM TEXT FILE
     def load_students(self):
@@ -337,8 +344,8 @@ class StudentManagerGUI:
 
         self.set_background("score")
         self.toggle_main_ui(False)     # to HIDE search, sort, summary
-        
-        # RESET FRAME SIZE (important fix)
+
+        # RESET FRAME SIZE
         self.records_frame.place(x=230, y=230, width=600, height=310)
 
         # Clear old content
@@ -404,7 +411,7 @@ class StudentManagerGUI:
             fg="white",
             activebackground="#335566",
             activeforeground="white",
-            font=("Consolas", 15, "bold")  # ← Bigger font requested
+            font=("Consolas", 15, "bold")  
         )
 
         menu.add_command(
@@ -418,10 +425,6 @@ class StudentManagerGUI:
         menu.add_command(
             label="Update Student", 
             command=self.update_student_window)
-        menu.add_separator()
-        menu.add_command(
-            label="Sort Records", 
-            command=self.open_sort_menu)
 
         # open menu near extension button
         menu.tk_popup(self.btn_ext.winfo_rootx(), self.btn_ext.winfo_rooty() + 35)
@@ -445,14 +448,14 @@ class StudentManagerGUI:
         self.set_background("edit")
         self.toggle_main_ui(False)
 
-        # Resize + reposition records frame so it fits EXACTLY in the white rectangle
+        # Resize + reposition records frame 
         self.records_frame.place(x=297, y=190, width=450, height=387)
 
         # Clear old content
         for w in self.records_frame.winfo_children():
             w.destroy()
 
-        # Create centered form inside frame
+        # Created centered form inside frame
         form = tk.Frame(self.records_frame, bg="#0F1A24")
         form.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -483,7 +486,7 @@ class StudentManagerGUI:
 
     def save_new_student(self):
 
-        # --- Extract Raw Inputs ---
+        #Extract Raw Inputs
         num = self.add_entries["Student Number:"].get().strip()
         name = self.add_entries["Name:"].get().strip()
         cw1 = self.add_entries["CW1 Marks:"].get().strip()
@@ -493,25 +496,25 @@ class StudentManagerGUI:
 
         fields = [num, name, cw1, cw2, cw3, exam]
 
-        # --- Empty field validation ---
+        #Empty field validation
         if any(f == "" for f in fields):
             messagebox.showerror("Missing Information",
                                 "Please fill all the fields before saving.")
             return
 
-        # --- Student Number validation ---
+        #Student Number validation
         if not num.isdigit():
             messagebox.showerror("Invalid Student Number",
                                 "Student Number must contain digits only.")
             return
 
-        # --- Name validation ---
+        #Name validation
         if any(ch.isdigit() for ch in name):
             messagebox.showerror("Invalid Name",
                                 "Name must contain letters only, not numbers.")
             return
 
-        # --- Marks must be valid numbers ---
+        #Marks must be valid numbers
         try:
             cw1 = int(cw1)
             cw2 = int(cw2)
@@ -522,14 +525,14 @@ class StudentManagerGUI:
                                 "Marks must be numbers only (0–100).")
             return
 
-        # --- Marks 0–100 range validation ---
+        #Marks 0–100 range validation
         for m in (cw1, cw2, cw3, exam):
             if not (0 <= m <= 100):
                 messagebox.showerror("Invalid Marks",
                                     "All marks must be between 0 and 100.")
                 return
 
-        # --- Confirm popup ---
+        #Confirm popup
         confirm = messagebox.askyesno(
             "Confirm New Student",
             f"Add this student?\n\n"
@@ -541,17 +544,17 @@ class StudentManagerGUI:
         if not confirm:
             return
 
-        # --- Calculations ---
+        #Calculations
         coursework_total = cw1 + cw2 + cw3
         total = coursework_total + exam
         percent = total / 160 * 100
         grade = self.calc_grade(percent)
 
-        # --- Append to file ---
+        #Append to file
         with open(self.student_file, "a") as f:
-            f.write(f"{num},{name},{cw1},{cw2},{cw3},{exam}\n")
+            f.write(f"\n{num},{name},{cw1},{cw2},{cw3},{exam}\n")
 
-        # --- Update memory ---
+        #Update memory
         self.students.append({
             "number": num,
             "name": name,
@@ -572,12 +575,400 @@ class StudentManagerGUI:
 
     #  DELETE STUDENT WINDOW
     def delete_student_window(self):
-        messagebox.showinfo("Delete Student", "Ill add later")
+        self.delete_win = tk.Toplevel(self.root)
+        self.delete_win.title("Delete Student")
+        self.delete_win.geometry("400x300")
+        self.delete_win.resizable(False, False)
+        self.delete_win.configure(bg="#0F1A24")
+
+        tk.Label(
+            self.delete_win, 
+            text="Delete Student", 
+            font=("Consolas", 16, "bold"),
+            fg="white", 
+            bg="#0F1A24"
+        ).pack(pady=15)
+
+        # USER INPUT
+        tk.Label(
+            self.delete_win, text="Enter Name or Student Number:",
+            font=("Consolas", 12), fg="white", bg="#0F1A24"
+        ).pack()
+
+        self.del_search_var = tk.StringVar()
+        self.del_search_var.trace("w", self.filter_delete_results)
+
+        self.del_search_entry = tk.Entry(
+            self.delete_win, 
+            textvariable=self.del_search_var,
+            font=("Consolas", 12),
+            width=25
+        )
+        self.del_search_entry.pack(pady=5)
+
+        # DROPDOWN (MATCHED RESULTS)
+        tk.Label(
+            self.delete_win, text="Matching Students:",
+            font=("Consolas", 12), fg="white", bg="#0F1A24"
+        ).pack(pady=(10, 2))
+
+        self.del_combo = ttk.Combobox(
+            self.delete_win, 
+            font=("Consolas", 12),
+            state="readonly",
+            width=28
+        )
+        self.del_combo.pack()
+
+        # DELETE BUTTON
+        delete_btn = tk.Button(
+            self.delete_win,
+            image=self.delete_btn_img,
+            borderwidth=0,
+            bg="#0F1A24",
+            activebackground="#0F1A24",
+            command=self.confirm_and_delete
+        )
+        delete_btn.pack(pady=25)
+
+    def filter_delete_results(self, *args):
+        query = self.del_search_var.get().lower().strip()
+
+        if query == "":
+            self.del_combo["values"] = []
+            return
+
+        results = []
+
+        for s in self.students:
+            # strict match: number starts with OR name starts with
+            if s["number"].lower().startswith(query) or s["name"].lower().startswith(query):
+                results.append(f"{s['number']} - {s['name']}")
+
+        # update dropdown
+        self.del_combo["values"] = results
+
+        # auto-select first ONLY if results exist
+        if results:
+            self.del_combo.current(0)
+        else:
+            self.del_combo.set("")   # clears displayed selection
+
+
+    def confirm_and_delete(self):
+        selected = self.del_combo.get()
+
+        if selected == "":
+            messagebox.showerror("No Student Selected", "Please select a valid student from the list.")
+            return
+
+        # extract the real student number from dropdown
+        student_num = selected.split(" - ")[0].strip()
+
+        # final check: check if num exists in list
+        match = next((s for s in self.students if s["number"] == student_num), None)
+        if not match:
+            messagebox.showerror("Invalid Selection", "The selected student does not exist.")
+            return
+
+        # confirm popup
+        ok = messagebox.askyesno(
+            "Confirm Delete",
+            f"Are you sure you want to delete student:\n{selected}?"
+        )
+        if not ok:
+            return
+
+        # remove from memory
+        self.students = [s for s in self.students if s["number"] != student_num]
+
+        # rewrite full file
+        with open(self.student_file, "w") as f:
+            for s in self.students:
+                # store exactly as originally read
+                cw1 = cw2 = cw3 = s["coursework"] // 3
+                f.write(f"{s['number']},{s['name']},{cw1},{cw2},{cw3},{s['exam']}\n")
+
+        messagebox.showinfo("Deleted Successfully", "Student record has been removed.")
+        self.delete_win.destroy()
+        self.show_all_students()
+
 
 
     #  UPDATE STUDENT WINDOW
     def update_student_window(self):
-        messagebox.showinfo("Update Student", "Ill add later")
+        # TopLevel Window
+        self.update_win = tk.Toplevel(self.root)
+        self.update_win.title("Update Student")
+        self.update_win.geometry("480x420")
+        self.update_win.resizable(False, False)
+        self.update_win.configure(bg="#0F1A24")
+
+        tk.Label(
+            self.update_win,
+            text="Update Student Record",
+            font=("Consolas", 16, "bold"),
+            fg="white",
+            bg="#0F1A24"
+        ).pack(pady=15)
+
+        # SEARCH BAR
+        tk.Label(
+            self.update_win,
+            text="Search by Name or Student Number:",
+            font=("Consolas", 12),
+            fg="white",
+            bg="#0F1A24"
+        ).pack()
+
+        self.update_search_var = tk.StringVar()
+        self.update_search_var.trace("w", self.filter_update_results)
+
+        self.update_search_entry = tk.Entry(
+            self.update_win,
+            textvariable=self.update_search_var,
+            font=("Consolas", 12),
+            width=30
+        )
+        self.update_search_entry.pack(pady=6)
+
+        # DROPDOWN
+        tk.Label(
+            self.update_win,
+            text="Matching Students:",
+            font=("Consolas", 12),
+            fg="white",
+            bg="#0F1A24"
+        ).pack()
+
+        self.update_combo = ttk.Combobox(
+            self.update_win,
+            font=("Consolas", 12),
+            width=33,
+            state="readonly"
+        )
+        self.update_combo.pack(pady=5)
+        self.update_combo.bind("<<ComboboxSelected>>", self.fill_update_fields)
+
+        # FORM FRAME
+        form = tk.Frame(self.update_win, bg="#0F1A24")
+        form.pack(pady=10)
+
+        labels = ["Student Number:", "Name:", "CW1 Marks:",
+                "CW2 Marks:", "CW3 Marks:", "Exam Marks:"]
+        self.update_entries = {}
+
+        for i, text in enumerate(labels):
+            tk.Label(
+                form,
+                text=text,
+                font=("Consolas", 12),
+                fg="white",
+                bg="#0F1A24"
+            ).grid(row=i, column=0, sticky="w", padx=5, pady=5)
+
+            entry = tk.Entry(form, font=("Consolas", 12), width=20)
+            entry.grid(row=i, column=1, padx=5, pady=5)
+            self.update_entries[text] = entry
+
+        # UPDATE BUTTON
+        tk.Button(
+            self.update_win,
+            text="Save Changes",
+            font=("Consolas", 12, "bold"),
+            bg="#4CAF50",
+            fg="white",
+            width=14,
+            command=self.confirm_update_student
+        ).pack(pady=15)
+
+    def filter_update_results(self, *args):
+        query = self.update_search_var.get().lower().strip()
+
+        # Clear dropdown when empty
+        if not query:
+            self.update_combo["values"] = []
+            return
+
+        results = []
+
+        for s in self.students:
+            num = s["number"].lower()
+            name = s["name"].lower()
+
+            # FILTER:
+            # 1. full match student number
+            # 2. name starts with query
+            if num == query or name.startswith(query):
+                results.append(f"{s['number']} - {s['name']}")
+
+        self.update_combo["values"] = results
+
+        if results:
+            self.update_combo.current(0)
+
+    def update_student_window(self):
+        self.update_win = tk.Toplevel(self.root)
+        self.update_win.title("Update Student")
+        self.update_win.geometry("450x480")
+        self.update_win.resizable(False, False)
+        self.update_win.configure(bg="#0F1A24")
+
+        tk.Label(self.update_win, text="Update Student Record",
+                font=("Consolas", 16, "bold"),
+                fg="white", bg="#0F1A24").pack(pady=15)
+
+        #SEARCH FIELD
+
+        tk.Label(self.update_win, text="Search by Name or Number:",
+                font=("Consolas", 12), fg="white",
+                bg="#0F1A24").pack()
+
+        self.update_search_var = tk.StringVar()
+        self.update_search_var.trace("w", self.filter_update_results)
+
+        self.update_search_entry = tk.Entry(
+            self.update_win, textvariable=self.update_search_var,
+            font=("Consolas", 12), width=30
+        )
+        self.update_search_entry.pack(pady=5)
+
+        # Dropdown
+        tk.Label(self.update_win, text="Matching Students:",
+                font=("Consolas", 12), fg="white",
+                bg="#0F1A2A").pack(pady=(8,2))
+
+        self.update_combo = ttk.Combobox(
+            self.update_win, state="readonly",
+            font=("Consolas", 12), width=32
+        )
+        self.update_combo.pack()
+        self.update_combo.bind("<<ComboboxSelected>>", self.fill_update_fields)
+
+        #FORM FIELDS (This section includes auto-fill)
+
+        form = tk.Frame(self.update_win, bg="#0F1A24")
+        form.pack(pady=12)
+
+        labels = ["Student Number:", "Name:", "CW1:", "CW2:", "CW3:", "Exam:"]
+        self.update_entries = {}
+
+        for i, txt in enumerate(labels):
+            tk.Label(form, text=txt, font=("Consolas", 12),
+                    fg="white", bg="#0F1A24").grid(row=i, column=0,
+                                                    sticky="w", pady=6, padx=10)
+
+            e = tk.Entry(form, font=("Consolas", 12), width=20)
+            e.grid(row=i, column=1, pady=6)
+            self.update_entries[txt] = e
+
+        #UPDATE BUTTON    
+        update_btn = tk.Button(
+                self.update_win,
+                image=self.update_btn_img,
+                borderwidth=0,
+                bg="#0F1A24",
+                activebackground="#0F1A24",
+                command=self.save_updated_student
+            ).pack(pady=15)
+
+    def fill_update_fields(self, event):
+        selected = self.update_combo.get()
+        if not selected:
+            return
+
+        num = selected.split(" - ")[0]
+
+        # Find selected student
+        for s in self.students:
+            if s["number"] == num:
+                self.update_entries["Student Number:"].delete(0, tk.END)
+                self.update_entries["Student Number:"].insert(0, s["number"])
+
+                self.update_entries["Name:"].delete(0, tk.END)
+                self.update_entries["Name:"].insert(0, s["name"])
+
+                # saved only coursework sum; so rewrite split values from file
+                # reload raw exact CW values from file
+                with open(self.student_file) as f:
+                    for line in f:
+                        p = line.strip().split(",")
+                        if p[0] == num:
+                            cw1, cw2, cw3 = p[2], p[3], p[4]
+                            exam = p[5]
+
+                self.update_entries["CW1:"].delete(0, tk.END)
+                self.update_entries["CW1:"].insert(0, cw1)
+
+                self.update_entries["CW2:"].delete(0, tk.END)
+                self.update_entries["CW2:"].insert(0, cw2)
+
+                self.update_entries["CW3:"].delete(0, tk.END)
+                self.update_entries["CW3:"].insert(0, cw3)
+
+                self.update_entries["Exam:"].delete(0, tk.END)
+                self.update_entries["Exam:"].insert(0, exam)
+                break
+
+    def save_updated_student(self):
+        # Extract inputs
+        num = self.update_entries["Student Number:"].get().strip()
+        name = self.update_entries["Name:"].get().strip()
+        cw1 = self.update_entries["CW1:"].get().strip()
+        cw2 = self.update_entries["CW2:"].get().strip()
+        cw3 = self.update_entries["CW3:"].get().strip()
+        exam = self.update_entries["Exam:"].get().strip()
+
+        # Basic validation
+        if not num or not name or not cw1 or not cw2 or not cw3 or not exam:
+            messagebox.showerror("Missing Fields", "Please fill all fields.")
+            return
+
+        # Check duplicate student number
+        selected = self.update_combo.get()
+        old_number = selected.split(" - ")[0]
+
+        if num != old_number:
+            for s in self.students:
+                if s["number"] == num:
+                    messagebox.showerror("Duplicate Number",
+                                        "A student with this number already exists.")
+                    return
+
+        try:
+            cw1, cw2, cw3, exam = int(cw1), int(cw2), int(cw3), int(exam)
+        except:
+            messagebox.showerror("Invalid Marks", "Enter valid numbers for marks.")
+            return
+
+        # Confirm popup
+        ok = messagebox.askyesno(
+            "Confirm Update",
+            f"Update record for {old_number}?",
+        )
+        if not ok:
+            return
+
+        # Update file (rewrite)
+        new_lines = []
+        with open(self.student_file) as f:
+            for line in f:
+                p = line.strip().split(",")
+                if p[0] == old_number:
+                    new_lines.append(f"{num},{name},{cw1},{cw2},{cw3},{exam}\n")
+                else:
+                    new_lines.append(line)
+
+        with open(self.student_file, "w") as f:
+            f.writelines(new_lines)
+
+        # Update internal list
+        self.students = self.load_students()
+
+        messagebox.showinfo("Success", "Student updated successfully!")
+        self.update_win.destroy()
+        self.show_all_students()
+
 
 
 
