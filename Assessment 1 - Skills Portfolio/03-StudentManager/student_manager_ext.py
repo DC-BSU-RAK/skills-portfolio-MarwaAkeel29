@@ -11,6 +11,13 @@ class StudentManagerGUI:
         self.root.geometry("850x600")
         self.root.resizable(False, False)
 
+        #Window Icon (Favicon)
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Student_Manager.ico")
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
+
         #LOAD BACKGROUND IMAGE 
         self.bg_main_path = os.path.join(os.path.dirname(__file__), "background", "bg_1.png")
         self.bg_score_path = os.path.join(os.path.dirname(__file__), "background", "bg_2.png")
@@ -968,8 +975,6 @@ class StudentManagerGUI:
         messagebox.showinfo("Success", "Student updated successfully!")
         self.update_win.destroy()
         self.show_all_students()
-
-
 
 
 # RUN APP

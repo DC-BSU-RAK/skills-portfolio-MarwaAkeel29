@@ -125,6 +125,7 @@ class StudentManagerGUI:
         self.sort_button.image = self.sort_btn_img
         self.sort_button.place(x=805, y=180)   
      
+
     # LOADING STUDENTS FROM TEXT FILE
     def load_students(self):
         students = []
@@ -252,9 +253,10 @@ class StudentManagerGUI:
             foreground="white",
             borderwidth=0
         )
-        style.configure("Treeview.Heading",
-                        font=("Consolas", 10, "bold"),
-                        foreground="black")
+        style.configure(
+            "Treeview.Heading",
+            font=("Consolas", 10, "bold"),
+            foreground="black")
 
         tree.pack(side="left", fill="both", expand=True)
 
