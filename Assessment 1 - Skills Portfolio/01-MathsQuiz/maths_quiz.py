@@ -61,6 +61,12 @@ class MathNebula:
         self.root.config(bg="#0B0C10") # Sets space-themed dark background
         self.root.resizable(False, False) # Prevents unwanted resizing
 
+        #Window Icon (Favicon)
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "nebula.ico")
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
 
         self.root.protocol("WM_DELETE_WINDOW", self.quit_game)  # Ensures clean shutdown
 
