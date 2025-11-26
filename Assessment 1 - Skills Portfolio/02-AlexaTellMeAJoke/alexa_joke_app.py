@@ -11,6 +11,7 @@ import os
 
 #created class for gifs  
 class AnimatedGIF(tk.Label):
+
     def __init__(self, parent, gif_path):
         gif = Image.open(gif_path)
         self.frames = []
@@ -39,6 +40,12 @@ class JokeMatrix:
         self.root.config(bg="black")
         pygame.mixer.init()
 
+        #Window Icon (Favicon)
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Alexa_joke.ico")
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
 
         # PLAY STARTUP SOUND 
         startup_sound_path = os.path.join(os.path.dirname(__file__), "sounds", "witch.mp3")
@@ -147,7 +154,7 @@ class JokeMatrix:
         )
         sys_btn.place(x=10, y=10)
 
-        # Boot-up terminal lines (cyan hacker style)
+        # Boot-up terminal lines 
         boot_lines = (
             "<< INITIALIZING ALEXA HUMOR CORE >>\n"
             "<< LOADING JOKE RETRIEVAL MATRIX >>\n"
@@ -177,7 +184,7 @@ class JokeMatrix:
         self.punch_btn_img = tk.PhotoImage(file=punch_btn_img_path).subsample(3,3)
 
 
-        # --- FIRST JOKE BUTTON (appears only once) ---
+        #FIRST JOKE BUTTON - it will appear once
         self.joke_btn_first = tk.Button(
             self.root,
             image=self.joke_first_img,
@@ -189,7 +196,7 @@ class JokeMatrix:
         )
         self.joke_btn_first.place(x=103, y=356)
 
-        # --- SECOND JOKE BUTTON (hidden initially) ---
+        #SECOND JOKE BUTTON - hidden initially 
         self.joke_btn_second = tk.Button(
             self.root,
             image=self.joke_second_img,
@@ -200,7 +207,7 @@ class JokeMatrix:
         )
         self.joke_btn_second.place_forget()     
 
-        # --- PUNCHLINE BUTTON ---
+        #PUNCHLINE BUTTON
         self.punch_btn = tk.Button(
             self.root,
             image=self.punch_btn_img,
@@ -228,7 +235,6 @@ class JokeMatrix:
         self.joke_btn_second.place(x=93, y=360)
 
         self.first_time = False
-
 
 
     def handle_joke_button(self):
