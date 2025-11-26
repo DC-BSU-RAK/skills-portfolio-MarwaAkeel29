@@ -1,15 +1,27 @@
+# Tkinter UI components used for interactive student management system
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox  
+# PIL for loading and displaying icons, backgrounds, and button images
 from PIL import Image, ImageTk
+# OS used to dynamically load files (favicon, studentMarks.txt, buttons, backgrounds)
 import os
+
 
 class StudentManagerGUI:
 
     def __init__(self, root):
+        # main application window setup for student management dashboard
         self.root = root
         self.root.title("Student Work Management")
         self.root.geometry("850x600")
         self.root.resizable(False, False)
+
+        #Window Icon (Favicon)
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Student_Manager.ico")
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
 
         #LOAD BACKGROUND IMAGE 
         self.bg_main_path = os.path.join(os.path.dirname(__file__), "background", "bg.png")
@@ -60,6 +72,7 @@ class StudentManagerGUI:
             img = img.subsample(*sub)
         return img
     
+    # swaps between main and score background without recreating widgets
     def set_background(self, mode):
         if mode == "main":
             self.bg_label.config(image=self.bg_main_img)
@@ -68,6 +81,7 @@ class StudentManagerGUI:
             self.bg_label.config(image=self.bg_score_img)
             self.bg_label.image = self.bg_score_img
 
+    # hides or shows main homepage widgets depending on active section
     def toggle_main_ui(self, visible=True):
         """Show or hide main-page widgets: search, sort, summary."""
         if visible:
@@ -132,7 +146,8 @@ class StudentManagerGUI:
         if not os.path.exists(self.student_file):
             messagebox.showerror("Error", "studentMarks.txt not found!")
             return students
-
+        
+        # reads studentMarks.txt and converts each line into a student dictionary
         with open(self.student_file, "r") as f:
             for line in f:
                 parts = line.strip().split(",")
@@ -140,7 +155,7 @@ class StudentManagerGUI:
                     continue
 
                 num, name, c1, c2, c3, exam = parts
-                try:
+                try:  # also calculates total, percentage, and grade for table + score screen
                     cw_total = int(c1) + int(c2) + int(c3)
                     exam = int(exam)
                     total = cw_total + exam
@@ -160,6 +175,7 @@ class StudentManagerGUI:
 
         return students
 
+    #grading logic used after computing each student’s percentage
     def calc_grade(self, p):
         if p >= 70: return "A"
         if p >= 60: return "B"
@@ -167,7 +183,7 @@ class StudentManagerGUI:
         if p >= 40: return "D"
         return "F"
     
-    #Created Sort Menu with varieties of commands 
+     # builds the sort dropdown menu with multiple sorting criteria 
     def open_sort_menu(self):
         menu = tk.Menu(
             self.root, 
@@ -202,7 +218,7 @@ class StudentManagerGUI:
         # popup under the sort button
         menu.tk_popup(self.sort_button.winfo_rootx(), self.sort_button.winfo_rooty() + 35)
 
-    #Crested sort records function that links to command menu for specific tasks
+    # applies chosen sorting method and refreshes the displayed table
     def sort_records(self, mode):
         data = self.students.copy()
 
@@ -226,7 +242,7 @@ class StudentManagerGUI:
         self.show_table(data)
 
 
-    # TREEVIEW TABLE DISPLAY
+    # creates and displays the main TreeView table for all student records
     def show_table(self, dataset):
         # Clear old widgets 
         for w in self.records_frame.winfo_children():
@@ -278,6 +294,8 @@ class StudentManagerGUI:
                         values=(s["number"], s["name"], s["coursework"], s["exam"],
                                 s["total"], f"{s['percent']:.1f}%", s["grade"]))
             
+
+    # displays total student count + class average under the main table        
     def show_summary(self):
         # Clear old content
         for w in self.summary_frame.winfo_children():
@@ -296,6 +314,8 @@ class StudentManagerGUI:
             fg="#F2F8FA"
         ).pack(anchor="w", padx=11)
 
+
+    # real-time search that filters students by number or name
     def run_search(self, *args):
         query = self.search_var.get().strip().lower()
 
@@ -312,7 +332,7 @@ class StudentManagerGUI:
 
         self.show_table(result)
     
-    #Score section (this includes Highest and lowest)
+    # displays highest and lowest scoring students using clean card layout
     def show_scores_screen(self):
 
         self.set_background("score")
@@ -374,7 +394,7 @@ class StudentManagerGUI:
         create_card(cards_frame, "Lowest Scoring Student", lowest, "#FF6B6B", column=1)
 
 
-    # view all function linked to button
+    # default home screen → resets background and loads full student table
     def show_all_students(self):
         self.set_background("main")
         self.toggle_main_ui(True)       # to SHOW search, sort, summary again
@@ -383,7 +403,7 @@ class StudentManagerGUI:
 
 
 
-# RUN APP
+# runs the full student manager interface window
 if __name__ == "__main__":
     root = tk.Tk()
     StudentManagerGUI(root)
