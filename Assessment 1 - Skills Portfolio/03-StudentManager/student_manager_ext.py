@@ -1,7 +1,8 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
-import os
+import tkinter as tk           # Core GUI framework — builds all windows, frames, buttons for the manager
+from tkinter import ttk, messagebox   # ttk → styled widgets (treeview tables), messagebox → alerts & confirmations
+from PIL import Image, ImageTk    # Loads / converts background images & button icons for smooth UI rendering
+import os    # Helps locate resource folders (icons, backgrounds, text files)
+
 
 class StudentManagerGUI:
 
@@ -69,6 +70,8 @@ class StudentManagerGUI:
             img = img.subsample(*sub)
         return img
     
+    # Switches background based on screen mode → lets app visually change between 
+    # main, score view, and edit pages without recreating widgets
     def set_background(self, mode):
         if mode == "main":
             self.bg_label.config(image=self.bg_main_img)
@@ -80,6 +83,9 @@ class StudentManagerGUI:
             self.bg_label.config(image=self.bg_edit_img)
             self.bg_label.image = self.bg_edit_img
 
+    
+    # Shows or hides main-page elements (search bar, sort, summary)
+    # Used when switching to edit/score screens to keep layout clean and distraction-free
     def toggle_main_ui(self, visible=True):
         """Show or hide main-page widgets: search, sort, summary."""
         if visible:
@@ -93,7 +99,7 @@ class StudentManagerGUI:
             self.summary_frame.place_forget()
             
     
-    # SIDEBAR BUTTONS 
+    # Builds all sidebar buttons (view all, scores, manage)
     def create_sidebar_buttons(self):
 
         #VIEW ALL RECORD BUTTON
@@ -161,7 +167,7 @@ class StudentManagerGUI:
         self.delete_btn_img = self.load_image(self.btn_dir, "delete_btn.png", (3, 3))
    
      
-    # LOADING STUDENTS FROM TEXT FILE
+    # Reads studentMarks_ext.txt, converts raw text into usable student dictionaries
     def load_students(self):
         students = []
         if not os.path.exists(self.student_file):
@@ -175,7 +181,7 @@ class StudentManagerGUI:
                     continue
 
                 num, name, c1, c2, c3, exam = parts
-                try:
+                try: # calculates totals/percentages, and prepares all data for UI display
                     cw_total = int(c1) + int(c2) + int(c3)
                     exam = int(exam)
                     total = cw_total + exam
@@ -195,6 +201,7 @@ class StudentManagerGUI:
 
         return students
 
+    # Converts percentage into final letter grade → used when loading, adding, or updating students
     def calc_grade(self, p):
         if p >= 70: return "A"
         if p >= 60: return "B"
@@ -213,6 +220,7 @@ class StudentManagerGUI:
             activeforeground="white",
             font=("Consolas", 11))
 
+        # Groups all sorting choices in one clean place instead of separate buttons
         menu.add_command(label="Name (A → Z)",
                         command=lambda: self.sort_records("name_asc"))
         menu.add_command(label="Name (Z → A)", 
@@ -241,6 +249,7 @@ class StudentManagerGUI:
     def sort_records(self, mode):
         data = self.students.copy()
 
+        # Works for name, percentage, exam, cw, total, and student number
         if mode == "name_asc":
             data.sort(key=lambda s: s["name"].lower())
         elif mode == "name_desc":
@@ -261,7 +270,7 @@ class StudentManagerGUI:
         self.show_table(data)
 
 
-    # TREEVIEW TABLE DISPLAY
+    # Builds the main TreeView table each time data changes
     def show_table(self, dataset):
         # Clear old widgets 
         for w in self.records_frame.winfo_children():
@@ -306,7 +315,7 @@ class StudentManagerGUI:
             tree.heading(col, text=col)
             tree.column(col, width=w, anchor="center")
 
-        # Insert rows
+        # Clears old rows, applies custom theme, and inserts formatted student rows
         for s in dataset:
             tree.insert("", "end",
                         values=(s["number"], s["name"], s["coursework"], s["exam"],
@@ -317,9 +326,11 @@ class StudentManagerGUI:
         for w in self.summary_frame.winfo_children():
             w.destroy()
 
+        # Shows quick stats below the table (student count + average %)
         count = len(self.students)
         avg = sum(s['percent'] for s in self.students) / count if count else 0
 
+        # Auto updates whenever records are changed
         text = f"Total Students: {count}   |   Average Percentage: {avg:.2f}%"
 
         tk.Label(
@@ -330,6 +341,7 @@ class StudentManagerGUI:
             fg="#F2F8FA"
         ).pack(anchor="w", padx=11)
 
+    # Live search system → filters students as the user types
     def run_search(self, *args):
         query = self.search_var.get().strip().lower()
 
@@ -337,7 +349,8 @@ class StudentManagerGUI:
             # Empty search → show all
             self.show_table(self.students)
             return
-
+        
+        # Matches by student number or name for fast lookup
         result = [
             s for s in self.students
             if query in s["number"].lower()
@@ -410,6 +423,9 @@ class StudentManagerGUI:
         create_card(cards_frame, "Highest Scoring Student", highest, "#66FF7F", column=0)
         create_card(cards_frame, "Lowest Scoring Student", lowest, "#FF6B6B", column=1)
 
+
+    # Opens manage menu (add / delete / update)
+    # Keeps student modification actions grouped and accessible
     def open_extension_menu(self):
         menu = tk.Menu(
             self.root,
@@ -437,19 +453,18 @@ class StudentManagerGUI:
         menu.tk_popup(self.btn_ext.winfo_rootx(), self.btn_ext.winfo_rooty() + 35)
 
 
-    # view all function linked to button
+    # Returns user to main records page with full table + summary
     def show_all_students(self):
         self.set_background("main")
 
-        # RESET FRAME SIZE
+        # Resets background, UI elements, and table data
         self.records_frame.place(x=230, y=230, width=600, height=310)
-
-        self.toggle_main_ui(True)       # to SHOW search, sort, summary again
+        self.toggle_main_ui(True)    # to SHOW search, sort, summary again
         self.show_table(self.students)
         self.show_summary() #show the summary frame 
 
 
-    #  ADD STUDENT WINDOW
+    # Builds the Add Student form on BG3 layout
     def add_student_window(self):
         # Switch to BG3
         self.set_background("edit")
@@ -469,6 +484,7 @@ class StudentManagerGUI:
         labels = ["Student Number:", "Name:", "CW1 Marks:", "CW2 Marks:", "CW3 Marks:", "Exam Marks:"]
         self.add_entries = {}
 
+        # Creates labeled input fields and a save button inside the frame
         for i, text in enumerate(labels):
             tk.Label(
                 form, text=text, font=("Consolas", 12),
@@ -491,6 +507,7 @@ class StudentManagerGUI:
         save_btn.grid(row=len(labels), column=0, columnspan=2, pady=15)
 
 
+    # Validates all entered marks + name + number
     def save_new_student(self):
 
         #Extract Raw Inputs
@@ -551,7 +568,7 @@ class StudentManagerGUI:
         if not confirm:
             return
 
-        #Calculations
+        # Calculates totals, grade, appends to text file, updates memory, and refreshes UI
         coursework_total = cw1 + cw2 + cw3
         total = coursework_total + exam
         percent = total / 160 * 100
@@ -579,8 +596,7 @@ class StudentManagerGUI:
         self.show_all_students()
 
 
-
-    #  DELETE STUDENT WINDOW
+    # Popup window for deleting students
     def delete_student_window(self):
         self.delete_win = tk.Toplevel(self.root)
         self.delete_win.title("Delete Student")
@@ -605,6 +621,7 @@ class StudentManagerGUI:
         self.del_search_var = tk.StringVar()
         self.del_search_var.trace("w", self.filter_delete_results)
 
+        # Includes live search + dropdown to choose exactly one matching student
         self.del_search_entry = tk.Entry(
             self.delete_win, 
             textvariable=self.del_search_var,
@@ -638,6 +655,8 @@ class StudentManagerGUI:
         )
         delete_btn.pack(pady=25)
 
+
+    # Filters students in realtime based on typed text
     def filter_delete_results(self, *args):
         query = self.del_search_var.get().lower().strip()
 
@@ -647,8 +666,8 @@ class StudentManagerGUI:
 
         results = []
 
+        #Only shows matches in the dropdown (name or number starts with input)
         for s in self.students:
-            # strict match: number starts with OR name starts with
             if s["number"].lower().startswith(query) or s["name"].lower().startswith(query):
                 results.append(f"{s['number']} - {s['name']}")
 
@@ -662,6 +681,7 @@ class StudentManagerGUI:
             self.del_combo.set("")   # clears displayed selection
 
 
+    # Confirms and removes selected student from memory + file
     def confirm_and_delete(self):
         selected = self.del_combo.get()
 
@@ -701,8 +721,7 @@ class StudentManagerGUI:
         self.show_all_students()
 
 
-
-    #  UPDATE STUDENT WINDOW
+    # Opens update window with search bar + auto-filling form fields
     def update_student_window(self):
         # TopLevel Window
         self.update_win = tk.Toplevel(self.root)
@@ -765,6 +784,7 @@ class StudentManagerGUI:
                 "CW2 Marks:", "CW3 Marks:", "Exam Marks:"]
         self.update_entries = {}
 
+        # Lets user modify any student record
         for i, text in enumerate(labels):
             tk.Label(
                 form,
@@ -789,6 +809,8 @@ class StudentManagerGUI:
             command=self.confirm_update_student
         ).pack(pady=15)
 
+
+    # Filters students for update window dropdown
     def filter_update_results(self, *args):
         query = self.update_search_var.get().lower().strip()
 
@@ -804,8 +826,7 @@ class StudentManagerGUI:
             name = s["name"].lower()
 
             # FILTER:
-            # 1. full match student number
-            # 2. name starts with query
+            # Supports full number match or name starting with query
             if num == query or name.startswith(query):
                 results.append(f"{s['number']} - {s['name']}")
 
@@ -814,6 +835,7 @@ class StudentManagerGUI:
         if results:
             self.update_combo.current(0)
 
+    # Opens update window with search bar + auto-filling form fields
     def update_student_window(self):
         self.update_win = tk.Toplevel(self.root)
         self.update_win.title("Update Student")
@@ -826,7 +848,6 @@ class StudentManagerGUI:
                 fg="white", bg="#0F1A24").pack(pady=15)
 
         #SEARCH FIELD
-
         tk.Label(self.update_win, text="Search by Name or Number:",
                 font=("Consolas", 12), fg="white",
                 bg="#0F1A24").pack()
@@ -879,6 +900,8 @@ class StudentManagerGUI:
                 command=self.save_updated_student
             ).pack(pady=15)
 
+
+    # Auto-fills the update form with the selected student's exact values
     def fill_update_fields(self, event):
         selected = self.update_combo.get()
         if not selected:
@@ -917,6 +940,7 @@ class StudentManagerGUI:
                 self.update_entries["Exam:"].insert(0, exam)
                 break
 
+    # Validates changes, rewrites the record inside text file
     def save_updated_student(self):
         # Extract inputs
         num = self.update_entries["Student Number:"].get().strip()
