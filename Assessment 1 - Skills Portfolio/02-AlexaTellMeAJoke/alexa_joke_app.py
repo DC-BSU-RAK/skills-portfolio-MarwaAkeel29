@@ -1,36 +1,42 @@
-import tkinter as tk
-from tkinter import messagebox
-from PIL import Image, ImageTk, ImageSequence   
+import tkinter as tk # Main GUI framework for building all screens and buttons
+from tkinter import messagebox #Popup for system messages
+# Handles PNG & GIF loading + frame extraction for animated backgrounds
+from PIL import Image, ImageTk, ImageSequence
+# Picks random jokes + laughter sounds for unpredictable humor
 import random
+# Plays all sound effects (clicks, laughs, startup audio)
 import pygame
+# Used for building safe file paths for images, sounds, and icons
 import os
 
 
-# H A C K E R   J O K E   M A C H I N E   (v1.0)
-
-
-#created class for gifs  
+# Handles GIF animation for all screens
 class AnimatedGIF(tk.Label):
 
     def __init__(self, parent, gif_path):
+
+        # Handles GIF animation for all screens
         gif = Image.open(gif_path)
         self.frames = []
         for frame in ImageSequence.Iterator(gif):
             img = ImageTk.PhotoImage(frame.copy().convert("RGBA"))
-            duration = frame.info.get("duration", 80)
+            duration = frame.info.get("duration", 80) # keeps original GIF timing
             self.frames.append((img, duration))
 
+         # super() places the FIRST frame onto the label immediately
         super().__init__(parent, image=self.frames[0][0], borderwidth=0)
-        self.idx = 0
-        self.animate()
+
+        self.idx = 0   # track frame pointer for animation loop
+        self.animate() # start smooth autoplay
 
     def animate(self):
+         # cycling frames gives the glitchy/hacker effect
         frame, delay = self.frames[self.idx]
         self.config(image=frame)
         self.idx = (self.idx + 1) % len(self.frames)
         self.after(delay, self.animate)
 
-
+# created main class for the joke machine interface
 class JokeMatrix:
 
     def __init__(self, root):
@@ -40,22 +46,22 @@ class JokeMatrix:
         self.root.config(bg="black")
         pygame.mixer.init()
 
-        #Window Icon (Favicon)
+        #Window Icon (Favicon)- silently ignored if missing
         icon_path = os.path.join(os.path.dirname(__file__), "icon", "Alexa_joke.ico")
         try:
             self.root.iconbitmap(icon_path)
         except Exception:
             pass
 
-        # PLAY STARTUP SOUND 
+        # slight startup delay → feels like a "boot sequence" 
         startup_sound_path = os.path.join(os.path.dirname(__file__), "sounds", "witch.mp3")
-        # delay startup sound by 4 seconds
         self.root.after(2000, lambda: pygame.mixer.Sound(startup_sound_path).play())
 
-        # load button click sound
+        # slight startup delay → feels like a "boot sequence"
         sound_path = os.path.join(os.path.dirname(__file__), "sounds", "click.mp3")
         self.btn_sound = pygame.mixer.Sound(sound_path)
 
+        # random laughs to keep punchline reactions fun
         self.laugh_sounds = [
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh1.mp3")),
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh2.mp3")),
@@ -69,7 +75,7 @@ class JokeMatrix:
         self.current_setup = ""
         self.current_punchline = ""
 
-        # dynamic button state
+        # first_time determines whether to show FIRST joke button or NEXT button
         self.first_time = True
 
         # load jokes from txt file
@@ -79,32 +85,34 @@ class JokeMatrix:
         self.splash_screen()
 
 
-    # LOAD JOKES FROM TEXT FILE
+    # load all jokes from text file
     def load_jokes(self):
         """Reads jokes from randomJokes.txt and stores them."""
         file_path = os.path.join(os.path.dirname(__file__), "randomJokes.txt")
 
         with open(file_path, "r", encoding="utf-8") as file:
             for line in file:
-                if "?" in line:
+                if "?" in line: # quick validation for joke structure
                     setup, punchline = line.strip().split("?")
                     self.jokes.append((setup + "?", punchline))
 
 
-    # CLEAR THE WINDOW
+    # clear all widgets from screen
     def wipe(self):
-        """Removes all widgets from the screen."""
+        # clears screen before switching pages → prevents widget stacking
         for w in self.root.winfo_children():
             w.destroy()
 
+    # play button click sound
     def play_click(self):
         self.btn_sound.play()
 
+    # play random laugh sound
     def play_random_laugh(self):
         random.choice(self.laugh_sounds).play()            
 
 
-    # PAGE 1: SPLASH SCREEN
+    # display animated splash screen
     def splash_screen(self):
         self.wipe()
 
@@ -116,7 +124,7 @@ class JokeMatrix:
         self.bg = AnimatedGIF(self.root, gif_path)
         self.bg.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # center-bottom launch button
+        # initiate button (first user interaction)
         btn_img_path = os.path.join(os.path.dirname(__file__), "buttons", "initiate_btn.png")
         self.initiate_btn_img = tk.PhotoImage(file=btn_img_path).subsample(3,3)
 
@@ -126,12 +134,14 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=lambda: [pygame.mixer.stop(), self.play_click(), self.terminal_screen()]
+            command=lambda: [pygame.mixer.stop(), # stop intro sound before page swap
+                             self.play_click(), 
+                             self.terminal_screen()]
         )
         initiate_btn.place(relx=0.5, rely=0.88, anchor="center")
 
 
-    # PAGE 2: TERMINAL SCREEN UI
+    # load second page terminal UI
     def terminal_screen(self):
         self.wipe()
 
@@ -143,7 +153,7 @@ class JokeMatrix:
         # reset joke button state
         self.first_time = True
 
-        # system menu button (☰)
+        # three-line navigation menu top-left
         sys_btn = tk.Button(
             self.root,
             text="☰",
@@ -191,7 +201,8 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=lambda: [self.play_click(), self.handle_first_joke()]
+            command=lambda: [self.play_click(), 
+                             self.handle_first_joke()]
 
         )
         self.joke_btn_first.place(x=103, y=356)
@@ -203,7 +214,8 @@ class JokeMatrix:
             borderwidth=0,
             bg="black",
             activebackground="black",
-            command=lambda: [self.play_click(), self.handle_joke_button()]
+            command=lambda: [self.play_click(), 
+                             self.handle_joke_button()]
         )
         self.joke_btn_second.place_forget()     
 
@@ -216,14 +228,15 @@ class JokeMatrix:
             activebackground="black",
             command=lambda: [
             self.play_click(),
-            self.display_punchline(),   
+            self.display_punchline(), 
+            # small delay makes laugh feel like Audience reacting 
             self.root.after(1000, self.play_random_laugh)  
         ]
         )
         self.punch_btn.place(x=265, y=357)
 
 
-    # JOKE HANDLING FUNCTIONS
+    # first-time joke button logic
     def handle_first_joke(self):
         """Runs only once → fetch joke, then swap to NEXT JOKE button."""
         self.display_setup()
@@ -236,15 +249,16 @@ class JokeMatrix:
 
         self.first_time = False
 
-
+    # next-joke button logic
     def handle_joke_button(self):
-        """Handles NEXT JOKE button only."""
         self.display_setup()
 
 
+    # show joke setup text
     def display_setup(self):
         """Pick a random joke and show its setup text."""
         self.current_setup, self.current_punchline = random.choice(self.jokes)
+
         self.terminal_display.config(
             text=f"<< JOKE RETRIEVED >>\n\n{self.current_setup}",
             fg="#00E5FF",
@@ -252,8 +266,9 @@ class JokeMatrix:
             justify="left"      
         )
 
+    # show punchline text
     def display_punchline(self):
-        """Display punchline of the current joke."""
+    
         self.terminal_display.config(
             text=f"{self.current_setup}\n\n> {self.current_punchline}",
             fg="#00E5FF",
@@ -261,7 +276,7 @@ class JokeMatrix:
             justify='left'
         )
 
-    # SYSTEM MENU POPUP
+    # system menu popup window
     def system_menu(self):
         menu = tk.Toplevel(self.root)
         menu.title("System Menu")
@@ -276,6 +291,7 @@ class JokeMatrix:
             bg="black"
         ).pack(pady=10)
 
+        # restart → clears everything and replays startup
         tk.Button(
             menu,
             text="Restart",
@@ -283,7 +299,9 @@ class JokeMatrix:
             fg="black",
             bg="#00E5FF",
             width=14, 
-            command=lambda:[self.play_click(), menu.destroy(), self.splash_screen()]
+            command=lambda:[self.play_click(), 
+                            menu.destroy(), 
+                            self.splash_screen()]
         ).pack(pady=8)
 
         tk.Button(
@@ -293,7 +311,8 @@ class JokeMatrix:
             fg="black",
             bg="#00E5FF",
             width=14,
-            command=lambda: [self.play_click(), self.root.quit()]
+            command=lambda: [self.play_click(), 
+                             self.root.quit()]
         ).pack(pady=5)
 
 
