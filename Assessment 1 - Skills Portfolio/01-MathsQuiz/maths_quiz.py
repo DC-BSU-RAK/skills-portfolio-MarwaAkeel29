@@ -1,9 +1,14 @@
-import tkinter as tk
-from tkinter import ttk
-from PIL import Image, ImageTk, ImageSequence
-import random
-import os
-import pygame
+import tkinter as tk         # core GUI toolkit to build all Nebula interface screens
+# themed widgets for cleaner + modern UI controls
+from tkinter import ttk    
+# used to load, resize, and animate Nebula GIF backgrounds
+from PIL import Image, ImageTk, ImageSequence   
+# supports randomising math questions and challenge logic
+import random 
+# helps locate image/sound files inside project folders
+import os 
+# handles all Nebula sound effects + background music
+import pygame 
 
 
 # Class to load and animate GIF frames
