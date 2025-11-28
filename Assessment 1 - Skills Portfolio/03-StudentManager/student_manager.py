@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 # OS used to dynamically load files (favicon, studentMarks.txt, buttons, backgrounds)
 import os
 
-
+# reference: # Learned OOP class pattern from LinkedIn Tkinter exercises (CH-08)
 class StudentManagerGUI:
 
     def __init__(self, root):
@@ -148,7 +148,7 @@ class StudentManagerGUI:
             return students
         
         # reads studentMarks.txt and converts each line into a student dictionary
-        with open(self.student_file, "r") as f:
+        with open(self.student_file, "r") as f:   # concepts demonstrated from Lecture Notes
             for line in f:
                 parts = line.strip().split(",")
                 if len(parts) != 6:
@@ -185,7 +185,7 @@ class StudentManagerGUI:
     
      # builds the sort dropdown menu with multiple sorting criteria 
     def open_sort_menu(self):
-        menu = tk.Menu(
+        menu = tk.Menu(     # Reference: Menu structure setup (LinkedIn Course CH-05)
             self.root, 
             tearoff=0, 
             bg="#1A2A35", 
@@ -251,7 +251,7 @@ class StudentManagerGUI:
         # Table columns names
         columns = ("Number", "Name", "CW", "Exam", "Total", "Percent", "Grade")
 
-        # Created TreeView (used this idea from minerva linkedin course)
+        # Created TreeView (reference: used this idea from minerva linkedin course CH-05)
         tree = ttk.Treeview(
             self.records_frame,
             columns=columns,
@@ -260,7 +260,7 @@ class StudentManagerGUI:
         )
 
         # created a custom Style
-        style = ttk.Style()
+        style = ttk.Style() #Reference: ttk.Style customization technique from LinkedIn course CH-05
         style.configure(
             "Treeview",
             rowheight=28,
@@ -276,7 +276,7 @@ class StudentManagerGUI:
 
         tree.pack(side="left", fill="both", expand=True)
 
-        # Attached scrollbar 
+        # Attached scrollbar (Reference: Adapted Scrollbar concept from Linkedin course CH-05)
         scroll = ttk.Scrollbar(self.records_frame, orient="vertical", command=tree.yview)
         scroll.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scroll.set)

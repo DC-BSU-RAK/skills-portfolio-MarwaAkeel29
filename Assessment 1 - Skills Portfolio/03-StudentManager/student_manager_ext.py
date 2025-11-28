@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox   # ttk → styled widgets (treeview tables)
 from PIL import Image, ImageTk    # Loads / converts background images & button icons for smooth UI rendering
 import os    # Helps locate resource folders (icons, backgrounds, text files)
 
-
+# reference: # Learned OOP class pattern from LinkedIn Tkinter exercises (CH-08)
 class StudentManagerGUI:
 
     def __init__(self, root):
@@ -174,7 +174,7 @@ class StudentManagerGUI:
             messagebox.showerror("Error", "studentMarks.txt not found!")
             return students
 
-        with open(self.student_file, "r") as f:
+        with open(self.student_file, "r") as f: # concepts demonstrated from Lecture Notes
             for line in f:
                 parts = line.strip().split(",")
                 if len(parts) != 6:
@@ -211,7 +211,7 @@ class StudentManagerGUI:
     
     #Created Sort Menu with varieties of commands 
     def open_sort_menu(self):
-        menu = tk.Menu(
+        menu = tk.Menu(  # Reference: Menu structure setup (LinkedIn Course CH-05)
             self.root, 
             tearoff=0, 
             bg="#1A2A35", 
@@ -279,7 +279,7 @@ class StudentManagerGUI:
         # Table columns names
         columns = ("Number", "Name", "CW", "Exam", "Total", "Percent", "Grade")
 
-        # Created TreeView (used this idea from minerva linkedin course)
+        # Created TreeView (reference: used this idea from minerva linkedin course)
         tree = ttk.Treeview(
             self.records_frame,
             columns=columns,
@@ -288,7 +288,7 @@ class StudentManagerGUI:
         )
 
         # created a custom Style
-        style = ttk.Style()
+        style = ttk.Style() #Reference: ttk.Style customization technique from LinkedIn course CH-05
         style.configure(
             "Treeview",
             rowheight=28,
@@ -303,7 +303,7 @@ class StudentManagerGUI:
 
         tree.pack(side="left", fill="both", expand=True)
 
-        # Attached scrollbar 
+        # Attached scrollbar (Reference: Adapted Scrollbar concept from Linkedin course CH-05)
         scroll = ttk.Scrollbar(self.records_frame, orient="vertical", command=tree.yview)
         scroll.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scroll.set)
@@ -427,7 +427,7 @@ class StudentManagerGUI:
     # Opens manage menu (add / delete / update)
     # Keeps student modification actions grouped and accessible
     def open_extension_menu(self):
-        menu = tk.Menu(
+        menu = tk.Menu(  #Concept from linkedin course CH-05
             self.root,
             tearoff=0,
             bg="#1A2A35",
@@ -636,7 +636,7 @@ class StudentManagerGUI:
             font=("Consolas", 12), fg="white", bg="#0F1A24"
         ).pack(pady=(10, 2))
 
-        self.del_combo = ttk.Combobox(
+        self.del_combo = ttk.Combobox( #Concept from linkedin Course CH-03
             self.delete_win, 
             font=("Consolas", 12),
             state="readonly",
@@ -709,7 +709,7 @@ class StudentManagerGUI:
         # remove from memory
         self.students = [s for s in self.students if s["number"] != student_num]
 
-        # rewrite full file
+        # rewrite full file (reference: lecture notes)
         with open(self.student_file, "w") as f:
             for s in self.students:
                 # store exactly as originally read
