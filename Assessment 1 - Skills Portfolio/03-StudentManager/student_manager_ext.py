@@ -13,7 +13,7 @@ class StudentManagerGUI:
         self.root.resizable(False, False)
 
         #Window Icon (Favicon)
-        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Student_Manager.ico")
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Student.ico")
         try:
             self.root.iconbitmap(icon_path)
         except Exception:
@@ -62,13 +62,13 @@ class StudentManagerGUI:
         self.summary_frame = tk.Frame(self.root, bg="#0F1A24")
         self.summary_frame.place(x=230, y=543, width=600, height=40)
 
-    # IMAGE LOADER WITH SUBSAMPLE
+    #Load icon image 
     def load_image(self, folder, name, sub=None):
         path = os.path.join(folder, name)
-        img = tk.PhotoImage(file=path)
+        img = tk.PhotoImage(file=path)  # Load image
         if sub:
-            img = img.subsample(*sub)
-        return img
+            img = img.subsample(*sub)  # Resize via subsampling
+        return img 
     
     # Switches background based on screen mode → lets app visually change between 
     # main, score view, and edit pages without recreating widgets
