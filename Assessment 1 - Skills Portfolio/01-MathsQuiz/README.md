@@ -89,8 +89,3 @@ You take the role of a space cadet traveling through galaxies, solving math chal
 - Clean OOP structure for easy future expansion  
 
 ---
-
-## 🎮 **Run the Game**
-
-```bash
-python main.py
