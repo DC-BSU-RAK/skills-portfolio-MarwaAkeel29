@@ -46,8 +46,8 @@ class JokeMatrix:
         self.root.config(bg="black")
         pygame.mixer.init()
 
-        #Window Icon (Favicon)- silently ignored if missing
-        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Alexa_joke.ico")
+        #Window Icon (Favicon)
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Alexa.ico")
         try:
             self.root.iconbitmap(icon_path)
         except Exception:
@@ -67,7 +67,6 @@ class JokeMatrix:
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh2.mp3")),
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh3.mp3")),
         pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh4.mp3")),
-        pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "sounds", "laugh5.mp3")),
         ]
 
         # store jokes
@@ -84,6 +83,14 @@ class JokeMatrix:
         # open splash screen
         self.splash_screen()
 
+    # load icon image
+    def load_image(self, folder, name, sub=None):
+        path = os.path.join(folder, name)
+        img = tk.PhotoImage(file=path)  # Load image
+        if sub:
+            img = img.subsample(*sub)  # Resize via subsampling
+        return img        
+
 
     # load all jokes from text file
     def load_jokes(self):
@@ -95,6 +102,17 @@ class JokeMatrix:
                 if "?" in line: # quick validation for joke structure
                     setup, punchline = line.strip().split("?")
                     self.jokes.append((setup + "?", punchline))
+
+    def speak(self, text):
+        """Convert text to audio & play non-blocking."""
+        try:
+            from gtts import gTTS
+            tts = gTTS(text=text, lang="en")
+            audio_path = os.path.join(os.path.dirname(__file__), "temp_joke.mp3")
+            tts.save(audio_path)
+            pygame.mixer.Sound(audio_path).play()  # NON-BLOCKING
+        except Exception as e:
+            print("Voice error:", e)
 
 
     # clear all widgets from screen
@@ -265,6 +283,8 @@ class JokeMatrix:
             wraplength=360,
             justify="left"      
         )
+        self.speak(self.current_setup)
+
 
     # show punchline text
     def display_punchline(self):
@@ -275,6 +295,11 @@ class JokeMatrix:
             wraplength=360,
             justify='left'
         )
+
+        self.speak(self.current_punchline)
+        self.root.after(1300, self.play_laugh_sound)
+
+
 
     # system menu popup window
     def system_menu(self):
@@ -314,6 +339,15 @@ class JokeMatrix:
             command=lambda: [self.play_click(), 
                              self.root.quit()]
         ).pack(pady=5)
+
+    def play_laugh_sound(self):
+        """Plays laugh sound only when called (delayed, non-blocking)."""
+        try:
+            laugh_path = os.path.join(os.path.dirname(__file__), "sounds", "laugh.mp3")
+            pygame.mixer.Sound(laugh_path).play()
+        except Exception as e:
+            print("Laugh sound error:", e)
+
 
 
 # RUN APPLICATION
