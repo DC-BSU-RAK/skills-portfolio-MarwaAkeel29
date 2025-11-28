@@ -23,7 +23,7 @@ class AnimatedGIF(tk.Label):
             duration = frame.info.get("duration", 80) # keeps original GIF timing
             self.frames.append((img, duration))
 
-         # super() places the FIRST frame onto the label immediately
+        # super() places the FIRST frame onto the label immediately
         super().__init__(parent, image=self.frames[0][0], borderwidth=0)
 
         self.idx = 0   # track frame pointer for animation loop
@@ -37,6 +37,7 @@ class AnimatedGIF(tk.Label):
         self.after(delay, self.animate)
 
 # created main class for the joke machine interface
+# reference: # Learned OOP class pattern from LinkedIn Tkinter exercises (CH-08)
 class JokeMatrix:
 
     def __init__(self, root):
@@ -47,7 +48,7 @@ class JokeMatrix:
         pygame.mixer.init()
 
         #Window Icon (Favicon)
-        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Alexa.ico")
+        icon_path = os.path.join(os.path.dirname(__file__), "icon", "Alexa.ico") #References: Used os path code from ChatGPT
         try:
             self.root.iconbitmap(icon_path)
         except Exception:
@@ -97,7 +98,7 @@ class JokeMatrix:
         """Reads jokes from randomJokes.txt and stores them."""
         file_path = os.path.join(os.path.dirname(__file__), "randomJokes.txt")
 
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, "r", encoding="utf-8") as file:  # Reference: # Concept adapted from Lecture Notes
             for line in file:
                 if "?" in line: # quick validation for joke structure
                     setup, punchline = line.strip().split("?")
@@ -118,7 +119,7 @@ class JokeMatrix:
     # clear all widgets from screen
     def wipe(self):
         # clears screen before switching pages → prevents widget stacking
-        for w in self.root.winfo_children():
+        for w in self.root.winfo_children(): # Reference: concept from LinkedIn Tkinter course (CH-04)
             w.destroy()
 
     # play button click sound
@@ -303,7 +304,7 @@ class JokeMatrix:
 
     # system menu popup window
     def system_menu(self):
-        menu = tk.Toplevel(self.root)
+        menu = tk.Toplevel(self.root) #reference: toplevel window concept from linkedin course (CH-04)
         menu.title("System Menu")
         menu.geometry("260x160")
         menu.config(bg="black")
