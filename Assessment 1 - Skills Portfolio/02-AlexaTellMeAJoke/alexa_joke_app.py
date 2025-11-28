@@ -340,6 +340,7 @@ class JokeMatrix:
                              self.root.quit()]
         ).pack(pady=5)
 
+     # plays a short laughter clip after punchline (delayed)
     def play_laugh_sound(self):
         """Plays laugh sound only when called (delayed, non-blocking)."""
         try:
@@ -347,7 +348,6 @@ class JokeMatrix:
             pygame.mixer.Sound(laugh_path).play()
         except Exception as e:
             print("Laugh sound error:", e)
-
 
 
 # RUN APPLICATION
