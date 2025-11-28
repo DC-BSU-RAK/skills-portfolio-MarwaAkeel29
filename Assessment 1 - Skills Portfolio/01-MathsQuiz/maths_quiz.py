@@ -130,7 +130,14 @@ class MathNebula:
         self.wrong_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "wrong.mp3")) # Wrong answer alert
         self.game_sound = pygame.mixer.Sound(os.path.join(self.snd_dir, "game.wav"))  # Menu navigation effect
 
-
+    #load icon image
+    def load_image(self, folder, name, sub=None):
+        path = os.path.join(folder, name)
+        img = tk.PhotoImage(file=path)  # Load image
+        if sub:
+            img = img.subsample(*sub)  # Resize via subsampling
+        return img
+            
     def choose_title_screen(self):
         # Popup for rank selection
         title_win = tk.Toplevel(self.root)
@@ -296,14 +303,6 @@ class MathNebula:
             self.root.after(10, lambda: self.animate_progress(target))  # gradual update
 
 
-    def load_image(self, folder, name, sub=None):
-        path = os.path.join(folder, name)
-        img = tk.PhotoImage(file=path)  # Load PNG image
-        if sub:
-            img = img.subsample(*sub)  # Resize via subsampling
-        return img
-    
-    
     # Home Screen
     def launch_portal(self):
         self.clear_screen() # Reset screen for main menu
