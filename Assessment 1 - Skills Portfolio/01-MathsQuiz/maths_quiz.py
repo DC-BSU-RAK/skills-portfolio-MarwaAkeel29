@@ -56,6 +56,7 @@ class AnimatedGIF(tk.Label):
 
 
 # Main class for the Math Nebula game interface and logic
+# reference: # Learned OOP class pattern from LinkedIn Tkinter exercises (CH-08)
 class MathNebula:
 
     # Initialization
@@ -133,7 +134,7 @@ class MathNebula:
     #load icon image
     def load_image(self, folder, name, sub=None):
         path = os.path.join(folder, name)
-        img = tk.PhotoImage(file=path)  # Load image
+        img = tk.PhotoImage(file=path)  # Load image (Linkedin course)
         if sub:
             img = img.subsample(*sub)  # Resize via subsampling
         return img
@@ -176,7 +177,7 @@ class MathNebula:
         # Stores selected title
         self.title_var = tk.StringVar(value=self.space_title)  
 
-        dropdown = ttk.Combobox(
+        dropdown = ttk.Combobox(   #Reference: Combobox configuration adapted from LinkedIn Tkinter course (CH-03)
             title_win, 
             textvariable=self.title_var,
             values=SPACE_TITLES,
@@ -498,7 +499,7 @@ class MathNebula:
             bg="#0B0C10").pack()
 
         # Progress tracker bar
-        self.mission_progress = ttk.Progressbar(
+        self.mission_progress = ttk.Progressbar( # Reference: Progressbar usage based on  LinkedIn Tkinter course (CH-03)
             right, 
             orient="horizontal",
             length=165, 
